@@ -1,0 +1,16 @@
+/**
+* \mainpage Mainpage documentation
+*
+* ## Serializable ##
+* Generic protocol specification library
+* - \subpage serializable_intro
+* - \subpage serializable_license
+* - \subpage serializable_requirements
+* - \subpage serializable_tutorial
+*  - \ref serializable_simple
+*  - \ref serializable_portable
+*  - \ref serializable_custom_structures
+*  - \ref serializable_custom_implementation
+* - \subpage serializable_discussion
+*  - \ref serializable_zero_overhead
+*/
