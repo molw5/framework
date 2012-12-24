@@ -22,3 +22,7 @@ test_big
 
 # Doxygen output
 html/
+
+# Examples
+examples/*/*
+!examples/*/*.cpp
