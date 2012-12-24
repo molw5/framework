@@ -325,6 +325,7 @@ struct object : serializable <object,
 * - Add documentation for "custom_serialization" example
 * - Add documentation for "adding_mutator_types" example
 * - Add documentation for "adding_container_types" example
+* - Add documentation for "custom_serializable_implementation" example
 */ 
 
 /**
