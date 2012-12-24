@@ -1,0 +1,4 @@
+var searchData=
+[
+  ['value_5fimplementation',['value_implementation',['../structframework_1_1serializable_1_1value__implementation.html#a79d1d0e4335252b7586cd67fdead8186',1,'framework::serializable::value_implementation::value_implementation()'],['../structframework_1_1serializable_1_1value__implementation.html#a43fbc32ab094c3a01ac478ed3dd339e2',1,'framework::serializable::value_implementation::value_implementation(value_type value)'],['../structframework_1_1serializable_1_1value__implementation.html#a44f067fda38ec47a0b9d60a14e6d0ba0',1,'framework::serializable::value_implementation::value_implementation(std::tuple&lt;&gt;)'],['../structframework_1_1serializable_1_1value__implementation.html#a7330bcbe262bccc2cc885c8389eca203',1,'framework::serializable::value_implementation::value_implementation(std::tuple&lt; Args &amp;&amp;...&gt; &amp;&amp;args)']]]
+];

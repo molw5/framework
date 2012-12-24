@@ -1,0 +1,6 @@
+var searchData=
+[
+  ['serializable_5fimplementation',['serializable_implementation',['../classframework_1_1serializable_1_1serializable__implementation.html#a69bba24d6c51461246d14cf59781e413',1,'framework::serializable::serializable_implementation::serializable_implementation()=default'],['../classframework_1_1serializable_1_1serializable__implementation.html#a12f6461bbb176e6b87d6b6b214316098',1,'framework::serializable::serializable_implementation::serializable_implementation(Args &amp;&amp;...args)']]],
+  ['set',['set',['../structframework_1_1serializable_1_1optional__value__implementation.html#a001b26870ba8b08100cac966dc6ed4e3',1,'framework::serializable::optional_value_implementation::set()'],['../structframework_1_1serializable_1_1value__implementation.html#aa31463249a265cd5c9f00de6de9aaea9',1,'framework::serializable::value_implementation::set()'],['../exceptionframework_1_1serializable_1_1inline__object.html#af84383cd5380cdee7dede7038b4a32e1',1,'framework::serializable::inline_object::set()'],['../namespaceframework_1_1serializable.html#a739eef06f5db7c8ed56fdcdaa25bed82',1,'framework::serializable::set()']]],
+  ['setflag',['setFlag',['../classframework_1_1serializable_1_1optional__field__output__wrapper.html#a9cf67a184f9749101845339789c88702',1,'framework::serializable::optional_field_output_wrapper']]]
+];
