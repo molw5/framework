@@ -177,7 +177,7 @@ namespace framework
                 /**
                 * \brief Container value.
                 */
-                value_type p_tValue {};
+                value_type p_tValue;
         };
 
         /**

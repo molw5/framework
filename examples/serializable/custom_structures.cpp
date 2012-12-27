@@ -8,12 +8,17 @@ using ::framework::serializable::comparable;
 using ::framework::serializable::serializable;
 using ::framework::serializable::value;
 
+// Define a new structure
 struct object :
+    // Provides the standard comparison operations
     comparable <object>,
+
+    // Define the object's specification
     serializable <object,
         value <NAME("Field 1"), int>,
         value <NAME("Field 2"), double>>
 {
+    // Forward constructor arguments to the base class
     template <typename... Args>
     object (Args&&... args)
         : object::serializable_base(std::forward <Args> (args)...)

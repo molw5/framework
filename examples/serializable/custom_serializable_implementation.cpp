@@ -140,29 +140,29 @@ class packed_object final :
         }
 };
 
-// Test message
-using test_structure = alias <
-    value <NAME("Field 1"), uint16_t>,
-    value <NAME("Field 2"), uint32_t>,
-    value <NAME("Field 3"), uint8_t>,
-    value <NAME("Field 4"), uint64_t>,
-    value <NAME("Field 5"), uint8_t>,
-    value <NAME("Field 6"), stl_array <3, uint8_t>>,
-    value <NAME("Field 7"), uint16_t>,
-    value <NAME("Field 8"), uint8_t>,
-    value <NAME("Field 9"), uint32_t>>;
-
 int main ()
 {
+    // Define an object type
+    using test_structure = alias <
+        value <NAME("Field 1"), uint16_t>,
+        value <NAME("Field 2"), uint32_t>,
+        value <NAME("Field 3"), uint8_t>,
+        value <NAME("Field 4"), uint64_t>,
+        value <NAME("Field 5"), uint8_t>,
+        value <NAME("Field 6"), stl_array <3, uint8_t>>,
+        value <NAME("Field 7"), uint16_t>,
+        value <NAME("Field 8"), uint8_t>,
+        value <NAME("Field 9"), uint32_t>>;
+
     // The packed container is compatible with the original definition, as demonstrated below
     
-    // Create an object
+    // Create an object, using the original object layout
     inline_object <test_structure> o1 {1, 2, 3, 4, 5, std::array <uint8_t, 3> {{6, 7, 8}}, 9, 10, 11};
 
     // Write the object to a file
     assert(write(o1, std::ofstream("filename")));
     
-    // Read the object from a file
+    // Read the object from a file using the packed object layout
     packed_object <test_structure> o2;
     assert(read(std::ifstream("filename"), o2));
 

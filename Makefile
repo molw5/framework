@@ -3,10 +3,10 @@
 CXX           = clang++
 CXX_COMPILE   = $(CXX) -c $(CXX_CFLAGS)
 CXX_LINK	  = $(CXX) $(CXX_LDFLAGS)
-#CXX_CFLAGS	  = -std=c++11 -stdlib=libc++ -pedantic -Wall -Wextra -Werror -I./ -DFRAMEWORK_NO_BOOST
-#CXX_LDFLAGS   = -std=c++11 -stdlib=libc++ -lUnitTest++
-CXX_CFLAGS	  = -std=c++11 -pedantic -Wall -Wextra -Werror -I./ -DFRAMEWORK_NO_BOOST
-CXX_LDFLAGS   = -std=c++11 -lUnitTest++
+CXX_CFLAGS	  = -std=c++11 -stdlib=libc++ -pedantic -Wall -Wextra -Werror -I./ -DFRAMEWORK_NO_BOOST
+CXX_LDFLAGS   = -std=c++11 -stdlib=libc++ -lUnitTest++
+#CXX_CFLAGS	  = -std=c++11 -pedantic -Wall -Wextra -Werror -I./ -DFRAMEWORK_NO_BOOST
+#CXX_LDFLAGS   = -std=c++11 -lUnitTest++
 
 UNAME := $(shell uname -o)
 
@@ -44,7 +44,8 @@ EXAMPLES = examples/serializable/a_simple_example.cpp \
            examples/serializable/custom_serializable_implementation.cpp \
            examples/serializable/serialization_overhead.cpp \
            examples/serializable/access_overhead.cpp \
-           examples/serializable/comparison_overhead.cpp
+           examples/serializable/comparison_overhead.cpp \
+           examples/serializable/copy_overhead.cpp
 
 EXECUTABLE_EXAMPLES = $(EXAMPLES:.cpp=)
 

@@ -4,18 +4,25 @@
 #include <framework/serializable.hpp>
 #include <framework/serializable/mutators/stl_string.hpp>
 
-using ::framework::serializable::stl_wstring;
-using ::framework::serializable::little_endian;
-using ::framework::serializable::big_endian;
-using ::framework::serializable::value;
-
-using object = ::framework::serializable::inline_object <
-    value <NAME("Field 1"), little_endian <int32_t>>,
-    value <NAME("Field 2"), big_endian <double>>,
-    value <NAME("Field 3"), stl_wstring <little_endian <uint32_t>>>>;
-
 int main ()
 {
+    using ::framework::serializable::stl_wstring;
+    using ::framework::serializable::little_endian;
+    using ::framework::serializable::big_endian;
+    using ::framework::serializable::value;
+    
+    // Define an object type
+    using object = ::framework::serializable::inline_object <
+        // Store the first field using little endian byte ordering
+        value <NAME("Field 1"), little_endian <int32_t>>,
+
+        // Store the second field using big endian byte ordering
+        value <NAME("Field 2"), big_endian <double>>,
+
+        // Store the wide string as a size-delimited container, storing the size and 
+        // characters (see stl_wstring documentation) using little-endian byte ordering.
+        value <NAME("Field 3"), stl_wstring <little_endian <uint32_t>>>>;
+
     // Create an object
     object o1 {1, 2.0, L"Hello World!"};
 

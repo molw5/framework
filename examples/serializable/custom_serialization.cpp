@@ -89,6 +89,7 @@ int main ()
     using ::framework::serializable::value;
     using ::framework::serializable::stl_vector;
 
+    // Define an object type
     using object = inline_object <
         value <NAME("Field 1"), s>,
         value <NAME("Field 2"), stl_vector <uint32_t, s>>>;

@@ -21,7 +21,7 @@ struct s
 };
 
 // Define Boost.Serialize style operators for an arbitrary stream type.  In practice the 
-// definition below are much too general, use_boost_syntax should assume that an appropriate 
+// definitions below are much too general, use_boost_syntax should assume that an appropriate 
 // operator is provided by the underlying stream type.  Used here for the sake of brevity.
 namespace boost_serialization_operators
 {
@@ -78,7 +78,13 @@ namespace framework
             static bool serialize(Archive& ar, Object& obj)
             {
                 using namespace boost_serialization_operators;
-                return ar & obj.x & obj.y & obj.z;
+
+                // Note: implicit conversion of the stringstream to bool fails when
+                //       compiled using libc++. 
+                if (!(ar & obj.x & obj.y & obj.z))
+                    return false;
+
+                return true;
             }
         };
     }
@@ -90,6 +96,7 @@ int main ()
     using ::framework::serializable::value;
     using ::framework::serializable::stl_vector;
 
+    // Define an object type
     using object = inline_object <
         value <NAME("Field 1"), s>,
         value <NAME("Field 2"), stl_vector <uint32_t, s>>>;

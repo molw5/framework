@@ -68,14 +68,18 @@ struct random_order : container_type <
 {
 };
 
+#include <iostream>
 int main ()
 {
     using ::framework::serializable::inline_object;
     using ::framework::serializable::big_endian;
     using ::framework::serializable::little_endian;
     using ::framework::serializable::value;
-    
+
+    // Define an object type
     using object = inline_object <
+        // Randomizes the serialization order and layout in memory of the contained fields
+        // using the seed 28198236
         random_order <28198236,
             value <NAME("Field 1"), little_endian <uint32_t>>,
             value <NAME("Field 2"), little_endian <uint32_t>>,
@@ -86,6 +90,13 @@ int main ()
     // Create an object
     object o1 {1, 2, 3, 4, 5};
 
+    // Note - initialization order is not affected
+    {
+        // Assert macro workaround
+        auto const field_1 = o1.get <NAME("Field 1")> ();
+        assert(field_1 == 1);
+    }
+
     // Write the object to a file
     assert(write(o1, std::ofstream("filename")));
     
@@ -95,6 +106,25 @@ int main ()
 
     // Check the result
     assert(o1 == o2);
+
+    // Read the fields directly
+    using object_direct = inline_object <
+        value <NAME("Field 1"), little_endian <uint32_t>>,
+        value <NAME("Field 2"), little_endian <uint32_t>>,
+        value <NAME("Field 3"), little_endian <uint32_t>>,
+        value <NAME("Field 4"), little_endian <uint32_t>>,
+        value <NAME("Field 5"), little_endian <uint32_t>>>;
+
+    // Read the object from a file
+    object_direct o3;
+    assert(read(std::ifstream("filename"), o3));
+
+    // Note - serialization order is affected
+    {
+        // Assert macro workaround
+        auto const field_1 = o3.get <NAME("Field 1")> ();
+        assert(field_1 == 2); // Note - seed dependent
+    }
 
     return 0;
 }
