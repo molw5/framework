@@ -125,8 +125,8 @@ struct link : value_type <
 
 template <typename... Args>
 struct bind_object : 
-    comparable <bind_object <Args...>>,
-    serializable <Args...>
+    public comparable <bind_object <Args...>>,
+    public serializable <bind_object <Args...>, Args...>
 {
     private:
         using value_names = typename get_visible_names <inline_object <Args...>>::type;
@@ -147,7 +147,7 @@ struct bind_object :
 
         template <typename T, std::size_t... Indices>
         bind_object (T& t, index_container <Indices...>*)
-            : serializable <Args...> (static_cast <typename passthrough <T, Indices>::type&> (t)...)
+            : serializable <bind_object <Args...>, Args...> (static_cast <typename passthrough <T, Indices>::type&> (t)...)
         {
         }
 };
@@ -204,8 +204,13 @@ using ObjectSpecification = bind_object <
 
 BIND(ObjectSpecification, Object)
 
+// Basic check - is the compiler able to optimize out the wrapper class?
+bool compare_control (Object const& lhs, Object const& rhs) __attribute__ ((noinline));
+bool compare_test (Object const& lhs, Object const& rhs) __attribute__ ((noinline));
+
 int main ()
 {
+    using wrapper = ObjectSpecification <link_implementation>;
     // Create an object
     Object o1 {1, 2, 3};
 
@@ -217,8 +222,25 @@ int main ()
     assert(read(std::ifstream("filename"), o2));
 
     // Check the value
-    using wrapper = ObjectSpecification <const_link_implementation>;
     assert(wrapper(o1) == wrapper(o2));
+
+    // Perform the tests
+    assert(compare_control(o1, o2));
+    assert(compare_test(o1, o2));
 
     return 0;
 };
+
+// Comparison tests
+bool compare_control (Object const& lhs, Object const& rhs)
+{
+    return lhs.x == rhs.x &&
+           lhs.y == rhs.y &&
+           lhs.z == rhs.z;
+}
+
+bool compare_test (Object const& lhs, Object const& rhs)
+{
+    using wrapper = ObjectSpecification <const_link_implementation>;
+    return wrapper(lhs) == wrapper(rhs);
+}
