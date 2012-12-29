@@ -43,6 +43,7 @@ EXAMPLES = examples/serializable/a_simple_example.cpp \
            examples/serializable/adding_container_types.cpp \
            examples/serializable/custom_serializable_implementation.cpp \
            examples/serializable/non_intrusive_wrappers_1.cpp \
+           examples/serializable/non_intrusive_wrappers_2.cpp \
            examples/serializable/serialization_overhead.cpp \
            examples/serializable/access_overhead.cpp \
            examples/serializable/comparison_overhead.cpp \

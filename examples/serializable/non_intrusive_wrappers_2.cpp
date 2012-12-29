@@ -1,0 +1,224 @@
+#include <fstream>
+#include <cassert>
+#include <vector>
+#include <iostream>
+
+#include <framework/serializable.hpp>
+#include <framework/serializable/mutators/stl_array.hpp>
+
+using ::framework::serializable::read;
+using ::framework::serializable::write;
+using ::framework::serializable::value_type;
+using ::framework::serializable::alias;
+using ::framework::serializable::serializable;
+using ::framework::serializable::get_visible_names;
+using ::framework::serializable::inline_object;
+using ::framework::serializable::extract_values;
+using ::framework::serializable::little_endian;
+using ::framework::serializable::comparable;
+using ::framework::index_container;
+using ::framework::make_indices;
+
+// Second approach - bind the object to a wrapper object
+
+// Wrapper around an implementation template - forwards the appropriate
+// template parameters
+template <
+    typename Type,
+    Type Offset,
+    typename Specification,
+    template <typename> class Implementation>
+struct link_implementation_wrapper
+{
+    template <typename Derived>
+    struct parameters
+    {
+        using offset_type = Type;
+        static constexpr Type offset_value {Offset};
+        using value_specification = Specification;
+        using derived = Derived;
+    };
+
+    template <typename Derived>
+    using type = Implementation <parameters <Derived>>;
+};
+
+// The value type and class name of the data member pointer are required 
+// here - extract them
+template <typename T>
+struct extract_pointer_types;
+
+template <typename Type, typename Class>
+struct extract_pointer_types <Type Class::*>
+{
+    using value_type = Type;
+    using class_type = Class;
+};
+
+// Define the link implementation - used to bind a member variable of an object to 
+// a serializable value type
+template <typename T>
+struct link_implementation
+{
+    private:
+        using class_type = typename extract_pointer_types <typename T::offset_type>::class_type;
+        using value_type = typename extract_pointer_types <typename T::offset_type>::value_type;
+
+    public:
+        value_type const& get () const { return p_tValue; }
+        void set (value_type value) { p_tValue = std::move(value); }
+
+    public:
+        link_implementation (class_type& t)
+            : p_tValue(t.*T::offset_value)
+        {
+        }
+
+    private:
+        value_type& p_tValue;
+};
+
+// As above, but binds a constant member variable to a serializable value type
+template <typename T>
+struct const_link_implementation
+{
+    private:
+        using class_type = typename extract_pointer_types <typename T::offset_type>::class_type;
+        using value_type = typename extract_pointer_types <typename T::offset_type>::value_type;
+
+    public:
+        value_type const& get () const { return p_tValue; }
+
+    public:
+        const_link_implementation (class_type const& t)
+            : p_tValue(t.*T::offset_value)
+        {
+        }
+
+    private:
+        value_type const& p_tValue;
+};
+
+// We need to assign a unique typename to the value type; this will suffice
+template <typename Type, Type Offset>
+struct member_name
+{
+};
+
+// Define a value type used to link a data member to a particular specification
+template <
+    typename Type,
+    Type Offset,
+    typename Specification,
+    template <typename> class Implementation = link_implementation>
+struct link : value_type <
+    member_name <Type, Offset>,
+    Specification,
+    link_implementation_wrapper <
+        Type,
+        Offset,
+        Specification,
+        Implementation
+    >::template type>
+{
+};
+
+template <typename... Args>
+struct bind_object : 
+    comparable <bind_object <Args...>>,
+    serializable <Args...>
+{
+    private:
+        using value_names = typename get_visible_names <inline_object <Args...>>::type;
+
+    public:
+        template <typename T>
+        bind_object (T& t)
+            : bind_object (t, static_cast <typename make_indices <value_names::size>::type*> (nullptr))
+        {
+        }
+
+    private:
+        template <typename T, std::size_t I>
+        struct passthrough
+        {
+            using type = T;
+        };
+
+        template <typename T, std::size_t... Indices>
+        bind_object (T& t, index_container <Indices...>*)
+            : serializable <Args...> (static_cast <typename passthrough <T, Indices>::type&> (t)...)
+        {
+        }
+};
+
+// Define a template to provide link with the required parameters
+#define LINK(Member) decltype(&Member), &Member
+
+// Define a template used to bind a specification to a particular structure
+#define BIND(Specification, Structure) \
+namespace framework \
+{ \
+    namespace serializable \
+    { \
+        template <> \
+        struct serializable_specification <Structure> \
+        { \
+            template <typename Input> \
+            static bool read (Input& in, Structure& out) \
+            { \
+                Specification <link_implementation> wrapper(out); \
+                if (!serializable_specification <decltype(wrapper)>::read(in, wrapper)) \
+                    return false; \
+\
+                return true; \
+            } \
+\
+            template <typename Output> \
+            static bool write (Structure const& in, Output& out) \
+            { \
+                Specification <const_link_implementation> wrapper(in); \
+                if (!serializable_specification <decltype(wrapper)>::write(wrapper, out)) \
+                    return false; \
+\
+                return true; \
+            } \
+        }; \
+    } \
+}
+
+// Usage example
+
+struct Object
+{
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+};
+
+template <template <typename> class Implementation>
+using ObjectSpecification = bind_object <
+    link <LINK(Object::x), little_endian <uint32_t>, Implementation>,
+    link <LINK(Object::y), little_endian <uint32_t>, Implementation>,
+    link <LINK(Object::z), little_endian <uint32_t>, Implementation>>;
+
+BIND(ObjectSpecification, Object)
+
+int main ()
+{
+    // Create an object
+    Object o1 {1, 2, 3};
+
+    // Write the object to a file
+    assert(write(o1, std::ofstream("filename")));
+    
+    // Read the object from a file
+    Object o2;
+    assert(read(std::ifstream("filename"), o2));
+
+    // Check the value
+    using wrapper = ObjectSpecification <const_link_implementation>;
+    assert(wrapper(o1) == wrapper(o2));
+
+    return 0;
+};
