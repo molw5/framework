@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 namespace framework
 {
     namespace serializable

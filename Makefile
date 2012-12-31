@@ -47,7 +47,8 @@ EXAMPLES = examples/serializable/a_simple_example.cpp \
            examples/serializable/serialization_overhead.cpp \
            examples/serializable/access_overhead.cpp \
            examples/serializable/comparison_overhead.cpp \
-           examples/serializable/copy_overhead.cpp
+           examples/serializable/copy_overhead.cpp \
+           examples/protocol_buffers/test.cpp
 
 EXECUTABLE_EXAMPLES = $(EXAMPLES:.cpp=)
 
