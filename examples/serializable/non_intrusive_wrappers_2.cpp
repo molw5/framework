@@ -229,7 +229,7 @@ int main ()
     assert(compare_test(o1, o2));
 
     return 0;
-};
+}
 
 // Comparison tests
 bool compare_control (Object const& lhs, Object const& rhs)

@@ -174,4 +174,4 @@ int main ()
     std::cout << "Packed object size: " << sizeof(o2) << std::endl;
 
     return 0;
-};
+}

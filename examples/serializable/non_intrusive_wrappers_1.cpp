@@ -121,4 +121,4 @@ int main ()
     assert(o1.z == o2.z);
 
     return 0;
-};
+}

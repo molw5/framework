@@ -14,7 +14,7 @@ template <typename SizeType>
 struct buffer : mutator_type <
     // Define the child type, used in the definition of the underlying type.  In this
     // case the mutator defines the underlying type (std::vector) directly.
-    std::vector <uint8_t>> 
+    std::vector <char>> 
 {
 };
 
