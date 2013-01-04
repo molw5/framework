@@ -77,7 +77,7 @@ namespace framework
 
                 enum 
                 { 
-                    value_mask = (~static_cast <value_type> (0)) >> (8*(sizeof(value_type)-N)),
+                    value_mask = (~static_cast <buffer_type> (0)) >> (8*(sizeof(buffer_type)-N)),
                     value_shift = 8*N,
                     offset = Order == framework::byte_order::big_endian ? 8*(N-1) : 0,
                     multiplier = Order == framework::byte_order::big_endian ? -8 : 8
@@ -86,7 +86,7 @@ namespace framework
                 class remaining_bytes
                 {
                     public:
-                        remaining_bytes (char const* &s, buffer_type &result)
+                        remaining_bytes (unsigned char const* &s, buffer_type &result)
                             : p_pString(s),
                               p_iResult(result)
                         {
@@ -96,7 +96,7 @@ namespace framework
                         void operator() ()
                         {
                             static_assert(N > 0, "Invalid invocation");
-                            p_iResult += static_cast <buffer_type> (*(p_pString++)) << (offset + multiplier*I);
+                            p_iResult += (static_cast <buffer_type> (*(p_pString++)) & 0xFF) << (offset + multiplier*I);
                         }
 
                         void operator() ()
@@ -105,7 +105,7 @@ namespace framework
                         }
 
                     private:
-                        char const*& p_pString;
+                        unsigned char const*& p_pString;
                         buffer_type& p_iResult;
                 };
 
@@ -130,13 +130,14 @@ namespace framework
                         Order == ::framework::byte_order::big_endian, 
                         "Not implemented");
 
+                    auto ptr = reinterpret_cast <unsigned char const*> (s);
                     buffer_type result {0};
 
                     if (n >= N - p_iState)
                     {
                         // Read the remaining partial sequence
                         variadic_switch_fallthrough <make_value_indices <N>> (
-                            p_iState, remaining_bytes(s, result));
+                            p_iState, remaining_bytes(ptr, result));
 
                         n -= (N - p_iState);
                         p_iState = 0;
@@ -146,7 +147,7 @@ namespace framework
                         {
                             // The compiler should be able to unroll this loop
                             for (unsigned int i=0; i < N; ++i)
-                                result += static_cast <buffer_type> (*(s++)) << (offset + multiplier*i);
+                                result += static_cast <buffer_type> (*(ptr++)) << (offset + multiplier*i);
 
                             n -= N;
                         }
@@ -162,7 +163,7 @@ namespace framework
                         // this sequence would be equivalent to:
                         //   tmp += static_cast <buffer_type> (*(s++)); // should be << 8 here
                         variadic_switch_fallthrough <make_value_indices <N>> (
-                            N - n, remaining_bytes(s, tmp));
+                            N - n, remaining_bytes(ptr, tmp));
 
                         // Will the compiler optimize out this conditional?
                         // Correct the sequence depending on endianness
@@ -171,13 +172,8 @@ namespace framework
                         else
                             tmp >>= 8*(n - p_iState);
 
-                        p_iState = n;
+                        p_iState += n;
                         result += tmp;
-                        
-                        // Note:
-                        // Here we immediately have p_iState > 0 as p_iState == 0 requires
-                        // p_iState == n and this state is never reached; see read complete blocks
-                        // above.
                     }
 
                     p_iSum += result;
@@ -192,7 +188,7 @@ namespace framework
                 */
                 value_type get () const
                 {
-                    value_type result = p_iSum;
+                    buffer_type result = p_iSum;
                     while (result >> value_shift)
                         result = (result & value_mask) + (result >> value_shift);
 
@@ -200,8 +196,8 @@ namespace framework
                 }
 
             private:
-                int p_iSum {0};
-                bool p_iState {0};
+                buffer_type p_iSum {0};
+                unsigned int p_iState {0};
         };
 
         /**

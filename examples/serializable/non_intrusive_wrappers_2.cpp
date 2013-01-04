@@ -134,7 +134,7 @@ struct bind_object :
     public:
         template <typename T>
         bind_object (T& t)
-            : bind_object (t, static_cast <typename make_indices <value_names::size>::type*> (nullptr))
+            : bind_object (t, static_cast <make_indices <value_names::size>*> (nullptr))
         {
         }
 
