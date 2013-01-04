@@ -5,7 +5,7 @@ CXX_COMPILE   = $(CXX) -c $(CXX_CFLAGS)
 CXX_LINK	  = $(CXX) $(CXX_LDFLAGS)
 #CXX_CFLAGS	  = -std=c++11 -stdlib=libc++ -pedantic -Wall -Wextra -Werror -I./ -DFRAMEWORK_NO_BOOST
 #CXX_LDFLAGS   = -std=c++11 -stdlib=libc++ -lUnitTest++
-CXX_CFLAGS	  = -std=c++11 -pedantic -Wall -Wextra -Werror -I./ -DFRAMEWORK_NO_BOOST
+CXX_CFLAGS	  = -std=c++11 -pedantic -Wall -Wextra -Werror -I./
 CXX_LDFLAGS   = -std=c++11 -lUnitTest++
 
 UNAME := $(shell uname -o)
@@ -23,7 +23,10 @@ SOURCES = tests/test.cpp \
           tests/serializable/mutators/terminated.cpp \
           tests/serializable/mutators/tuple_container.cpp \
           tests/serializable/mutators/stl.cpp \
-          tests/serializable/interfaces/comparable.cpp
+          tests/serializable/interfaces/comparable.cpp \
+          tests/serializable/streams/modular_sum.cpp \
+          tests/common/variadic_switch_fallthrough.cpp \
+          tests/common/variadic_switch_return.cpp
 
 SOURCES_LITTLE = tests/test.cpp \
                  tests/serializable/mutators/little_endian_1.cpp \
@@ -47,8 +50,7 @@ EXAMPLES = examples/serializable/a_simple_example.cpp \
            examples/serializable/serialization_overhead.cpp \
            examples/serializable/access_overhead.cpp \
            examples/serializable/comparison_overhead.cpp \
-           examples/serializable/copy_overhead.cpp \
-           examples/protocol_buffers/test.cpp
+           examples/serializable/copy_overhead.cpp
 
 EXECUTABLE_EXAMPLES = $(EXAMPLES:.cpp=)
 

@@ -15,21 +15,21 @@ namespace framework
         {
             using type = index_container <LhsIndices..., RhsIndices...>;
         };
+
+        template <std::size_t Size>
+        struct make_indices_impl
+        {
+            using type =
+                typename detail::merge_indices <
+                    typename make_indices_impl <Size-1>::type,
+                    index_container <Size-1>
+                >::type;
+        };
+
+        template <>
+        struct make_indices_impl <0>
+        {
+            using type = index_container <>;
+        };
     }
-
-    template <std::size_t Size>
-    struct make_indices
-    {
-        using type =
-            typename detail::merge_indices <
-                typename make_indices <Size-1>::type,
-                index_container <Size-1>
-            >::type;
-    };
-
-    template <>
-    struct make_indices <0>
-    {
-        using type = index_container <>;
-    };
 }

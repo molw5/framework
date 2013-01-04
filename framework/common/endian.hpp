@@ -95,3 +95,19 @@
 #else
     #error "Invalid FRAMEWORK_HOST_FLOAT_ENDIANNESS definition"
 #endif
+
+namespace framework
+{
+    /**
+    * \brief Byte order alias.
+    *
+    * Provides a series of enum values that may be used in place of the preprocessor
+    * definitions above.
+    */
+    enum class byte_order
+    {
+        little_endian = FRAMEWORK_LITTLE_ENDIAN,
+        big_endian = FRAMEWORK_BIG_ENDIAN,
+        host_endian = FRAMEWORK_HOST_ENDIANNESS
+    };
+};

@@ -181,7 +181,7 @@ namespace framework
                 * \brief Conditionally read value.
                 * \param in input stream
                 * \param out output object
-                * \return true on sucess, false on failure
+                * \return true on success, false on failure
                 */
                 template <typename Input, typename Output>
                 static bool read (Input& in, Output& out)
@@ -198,7 +198,7 @@ namespace framework
                 * \brief Conditionally write value.
                 * \param in input object
                 * \param out output stream
-                * \return true on sucess, false on failure
+                * \return true on success, false on failure
                 */
                 template <typename Input, typename Output>
                 static bool write (Input const& in, Output& out)

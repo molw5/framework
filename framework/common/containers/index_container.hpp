@@ -14,6 +14,12 @@
 
 namespace framework
 {
+    namespace detail
+    {
+        template <std::size_t Size>
+        struct make_indices_impl;
+    }
+
     /**
     * \headerfile index_container.hpp <framework/common/containers/index_container.hpp>
     * \brief Variadic index container.
@@ -31,26 +37,16 @@ namespace framework
     * \headerfile index_container.hpp <framework/common/containers/index_container.hpp>
     * \brief Index container constructor.
     *
-    * Creates a index container suitable for instantiating the elements of a tuple.  The following
-    * are equivalent:
+    * Creates an index_container containing the elements [0, Size).  The following are equivalent:
     *
     * \code
-    * using result = typename make_indicies <3>::type;
+    * using result = make_indices <3>;
     * using result = index_container <0, 1, 2>;
     * \endcode
     */
+    
     template <std::size_t Size>
-#ifndef DOXYGEN
-    struct make_indices;
-#else
-    struct make_indices
-    {
-        /**
-        * \brief Result.
-        */
-        typedef type;
-    };
-#endif
+    using make_indices = typename detail::make_indices_impl <Size>::type;
 }
 
 #include <framework/common/containers/index_container.inl>

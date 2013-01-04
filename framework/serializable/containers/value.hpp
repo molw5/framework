@@ -162,7 +162,7 @@ namespace framework
                 value_implementation (std::tuple <Args&&...>&& args)
                     : value_implementation (
                         std::forward <std::tuple <Args&&...>> (args), 
-                        static_cast <typename make_indices <sizeof... (Args)>::type*> (nullptr))
+                        static_cast <make_indices <sizeof... (Args)>*> (nullptr))
                 {
                 }
 

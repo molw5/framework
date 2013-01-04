@@ -24,6 +24,6 @@ namespace framework
         * \brief Common STL vector specification.
         */
         template <typename Size, typename Value>
-        using stl_vector = variable_container <Size, Value, std::vector <typename type_extractor <Value>::type>>;
+        using stl_vector = variable_container <Size, Value, std::vector <typename type_extractor <Value>::type>, true>;
     }
 }
