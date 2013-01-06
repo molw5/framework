@@ -90,4 +90,4 @@ namespace framework
 #undef FRAMEWORK_VARIADIC_CASE
 #undef FRAMEWORK_VARIADIC_SWITCH
     }
-};
+}

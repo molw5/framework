@@ -1,11 +1,11 @@
 #CXX           = /usr/lib/gcc-snapshot/bin/g++
-#CXX           = g++
-CXX           = clang++
+CXX           = g++
+#CXX           = clang++
 CXX_COMPILE   = $(CXX) -c $(CXX_CFLAGS)
 CXX_LINK	  = $(CXX) $(CXX_LDFLAGS)
 #CXX_CFLAGS	  = -std=c++11 -stdlib=libc++ -pedantic -Wall -Wextra -Werror -I./ -DFRAMEWORK_NO_BOOST
 #CXX_LDFLAGS   = -std=c++11 -stdlib=libc++ -lUnitTest++
-CXX_CFLAGS	  = -std=c++11 -pedantic -Wall -Wextra -Werror -I./
+CXX_CFLAGS	  = -std=c++11 -Wall -Wextra -Werror -Wno-trigraphs -I./
 CXX_LDFLAGS   = -std=c++11 -lUnitTest++
 
 UNAME := $(shell uname -o)

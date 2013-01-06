@@ -105,6 +105,6 @@ namespace framework
             std::forward <Handler> (handler),
             std::forward <Args> (args)...);
     }
-};
+}
 
 #include <framework/common/variadic_switch_return.inl>

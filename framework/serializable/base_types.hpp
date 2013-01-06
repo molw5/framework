@@ -258,30 +258,24 @@ namespace framework
             >::type>
         {
             /**
-            * Reads the output value as a raw stream of \c sizeof(out) bytes.
+            * Reads the output value as a raw stream of \c sizeof(out) bytes.  Allows for the presence of
+            * specialized read functions in the input stream, with the following precedence:
+            *   - in.read(out)
+            *   - in.read <sizeof(T)> (reinterpret_cast <char*> (out))
+            *   - in.read(reinterpret_cast <char*> (out), sizeof (T))
             */
             template <typename Input>
-            static bool read (Input& in, T& out)
-            {
-                T value;
-                if (!in.read(reinterpret_cast <char*> (&value), sizeof(value)))
-                    return false;
-
-                out = std::move(value);
-                return true;
-            }
+            static bool read (Input& in, T& out);
 
             /**
-            * Reads the input value as a raw stream of \c sizeof(out) bytes.
+            * Writes the input value as a raw stream of \c sizeof(out) bytes.  Allows for the presence of
+            * specialized write functions in the output stream, with the following precedence:
+            *   - out.write(in)
+            *   - out.write <sizeof(T)> (reinterpret_cast <char const*> (in)
+            *   - out.write(reinterpret_cast <char const*> (in), sizeof(T))
             */
             template <typename Output>
-            static bool write (T const& in, Output& out)
-            {
-                if (!out.write(reinterpret_cast <char const*> (&in), sizeof(in)))
-                    return false;
-
-                return true;
-            }
+            static bool write (T const& in, Output& out);
         };
 #endif
         
@@ -320,3 +314,5 @@ namespace framework
         };
     }
 }
+
+#include <framework/serializable/base_types.inl>

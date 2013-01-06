@@ -1,6 +1,7 @@
 // Copyright (C) 2012 iwg molw5
 // For conditions of distribution and use, see copyright notice in COPYING
 
+#include <stdexcept>
 #include <iostream>
 #include <sstream>
 #include <chrono>
@@ -9,6 +10,7 @@
 #include <framework/serializable.hpp>
 #include <framework/serializable/mutators/little_endian.hpp>
 #include <framework/serializable/mutators/big_endian.hpp>
+#include <framework/serializable/mutators/stl_array.hpp>
 #include <framework/serializable/streams/modular_sum.hpp>
 
 #if FRAMEWORK_HOST_ENDIANNESS != FRAMEWORK_LITTLE_ENDIAN
@@ -16,13 +18,16 @@
 #endif
 
 template <typename T>
-uint16_t sum_control_1 (T& in);// __attribute__ ((noinline));
+uint16_t sum_control_1 (T& in) __attribute__ ((noinline));
 
 template <typename T>
-uint16_t sum_control_2 (T& in);// __attribute__ ((noinline));
+uint16_t sum_control_2 (T& in) __attribute__ ((noinline));
 
 template <typename T>
-uint16_t sum_test (T& in);// __attribute__ ((noinline));
+uint16_t sum_control_3 (T& in) __attribute__ ((noinline));
+
+template <typename T>
+uint16_t sum_test (T& in) __attribute__ ((noinline));
 
 using namespace framework;
 using namespace framework::serializable;
@@ -56,10 +61,14 @@ int main ()
  #ifdef SUM_CONTROL_2
         result += sum_control_2(x);
  #else
-  #ifdef SUM_TEST
-        result += sum_test(x);
+  #ifdef SUM_CONTROL_3
+        result += sum_control_3(x);
   #else
-   #error "Test type must be specified"
+   #ifdef SUM_TEST
+        result += sum_test(x);
+   #else
+    #error "Test type must be specified"
+   #endif
   #endif
  #endif
 #endif
@@ -71,6 +80,7 @@ int main ()
     std::cout << "Result: " << result << std::endl;
     std::cout << "Duration: " << duration.count() << "ns" << std::endl;
     std::cout << "Operation Time: " << double(duration.count()) / double(COUNT) << "ns" << std::endl;
+    std::cout << "Time Per Byte: " << double(duration.count()) / double(37*COUNT) << "ns" << std::endl;
 
     return 0;
 }
@@ -78,6 +88,7 @@ int main ()
 template <typename T>
 uint16_t sum_control_1 (T& in)
 {
+    // Literal translation, byte by byte
     auto result = static_cast <uint32_t> (
         (static_cast <uint32_t> (get <NAME("Field 1")> (in)) << 8) +
         (((static_cast <uint32_t> (get <NAME("Field 2")> (in) >>  0) & 0xFF)) << 0) +
@@ -126,27 +137,79 @@ uint16_t sum_control_1 (T& in)
 template <typename T>
 uint16_t sum_control_2 (T& in)
 {
-    std::stringstream ss;
+    // Optimized summation
+    uint64_t tmp1 = 
+        (get <NAME("Field 2")> (in) >> 32) +
+        (get <NAME("Field 2")> (in) & 0xFFFFFFFF) +
+        static_cast <uint64_t> (get <NAME("Field 3")> (in)) +
+        static_cast <uint64_t> (get <NAME("Field 4")> (in)) +
+        static_cast <uint64_t> (get <NAME("Field 7")> (in)) +
+        (get <NAME("Field 8")> (in) >> 32) +
+        (get <NAME("Field 8")> (in) & 0xFFFFFFFF) +
+        (get <NAME("Field 9")> (in) >> 32) +
+        (get <NAME("Field 9")> (in) & 0xFFFFFFFF);
+
+    uint32_t tmp2 = 
+        static_cast <uint32_t> (get <NAME("Field 1")> (in)) +
+        static_cast <uint32_t> (get <NAME("Field 5")> (in)) +
+        static_cast <uint32_t> (get <NAME("Field 6")> (in));
+
+    tmp1 = (tmp1 & 0xFFFFFFFF) + (tmp1 >> 32);
+    tmp1 = (tmp1 & 0xFFFF) + (tmp1 >> 16);
+    tmp2 = (tmp2 & 0xFFFF) + (tmp2 >> 16);
+    tmp2 = tmp1 + (tmp2 << 8);
+    tmp2 = (tmp2 & 0xFFFF) + (tmp2 >> 16);
+    tmp2 = (tmp2 & 0xFFFF) + (tmp2 >> 16);
+
+    return ~tmp2;
+}
+
+struct unsafe_buffer
+{
+    unsafe_buffer ()
+        : it(reinterpret_cast <char*> (&buffer[0])),
+          begin(reinterpret_cast <char*> (&buffer[0]))
+    {
+    }
+
+    bool write (char const* s, std::size_t n)
+    {
+        memcpy(it, s, n);
+        it += n;
+        return true;
+    }
+
+    char* it;
+    char* const begin;
+    uint16_t buffer[128];
+};
+
+template <typename T>
+uint16_t sum_control_3 (T& in)
+{
+    // Buffered summation
+    unsafe_buffer ss;
     if (!write(in, ss))
-        throw std::runtime_error("Failed");
+        exit(1);
 
-    auto const& str = ss.str();
     uint32_t result = 0;
-    for (unsigned int i=0; i < str.size()/2; ++i)
-        result += (static_cast <uint16_t> (uint8_t(str[i*2])) << 8) + uint8_t(str[i*2+1]);
+    auto const size = ss.it - ss.begin;
+    for (unsigned int i=0; i < size/2; ++i)
+        result += ss.buffer[i];
 
-    if (str.size() % 2)
-        result += static_cast <uint16_t> (uint8_t(str.back())) << 8;
+    if (size % 2)
+        result += ss.buffer[size/2+1];
 
-    while (result >> 16)
-        result = (result & 0xFFFF) + (result >> 16);
-
+    result <<= 8;
+    result = (result & 0xFFFF) + (result >> 16);
+    result = (result & 0xFFFF) + (result >> 16);
     return ~static_cast <uint16_t> (result);
 }
 
 template <typename T>
 uint16_t sum_test (T& in)
 {
+    // Modular sum test
     internet_checksum out;
     if (!write(in, out))
         throw std::runtime_error("Failed");

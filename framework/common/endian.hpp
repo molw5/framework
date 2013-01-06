@@ -110,4 +110,4 @@ namespace framework
         big_endian = FRAMEWORK_BIG_ENDIAN,
         host_endian = FRAMEWORK_HOST_ENDIANNESS
     };
-};
+}
