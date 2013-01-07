@@ -18,11 +18,26 @@ namespace framework
 {
     namespace serializable
     {
+        namespace detail
+        {
+            template <typename... Args>
+            struct extract_head_safe
+            {
+                using type = void;
+            };
+
+            template <typename Head, typename... Tail>
+            struct extract_head_safe <Head, Tail...>
+            {
+                using type = Head;
+            };
+        }
+
         /**
         * \headerfile stream_wrapper.hpp <framework/serializable/streams/stream_wrapper.hpp>
         * \brief Stream wrapper class.
         *
-        * Provides the overrides necessary to forward read/write calls to an underlying stream.
+        * Provides the overrides necessary to forward primitive read/write calls to an underlying stream.
         */
         template <typename Parent, typename Stream>
         class stream_wrapper : private std::reference_wrapper <Stream>
@@ -88,7 +103,11 @@ namespace framework
                 */
                 template <typename... Args>
                 auto write (Args&&... args) ->
-                decltype(std::declval <Stream> ().write(args...), bool())
+                typename std::enable_if <
+                    sizeof...(Args) != 1 ||
+                    !write_type_exists <typename detail::extract_head_safe <Args...>::type, Stream>::value,
+                    decltype(std::declval <Stream> ().write(args...), bool())
+                >::type
                 {
                     auto const parent_this = static_cast <Parent*> (this);
                     if (!parent_this->writepre(args...))
@@ -148,7 +167,11 @@ namespace framework
                 */
                 template <typename... Args>
                 auto read (Args&&... args) ->
-                decltype(std::declval <Stream> ().read(args...), bool())
+                typename std::enable_if <
+                    sizeof...(Args) != 1 ||
+                    !read_type_exists <Stream, typename detail::extract_head_safe <Args...>::type>::value,
+                    decltype(std::declval <Stream> ().read(args...), bool())
+                >::type
                 {
                     auto const parent_this = static_cast <Parent*> (this);
                     if (!parent_this->readpre(args...))
