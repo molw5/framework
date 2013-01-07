@@ -1,53 +1,106 @@
 // Copyright (C) 2012 iwg molw5
 // For conditions of distribution and use, see copyright notice in COPYING
 
-#pragma once
-
-#include <type_traits>
-#include <algorithm>
-
 namespace framework
 {
     namespace serializable
     {
-#ifndef FRAMEWORK_SERIALIZABLE_NO_FUNDAMENTAL
         namespace detail
         {
-            template <typename Input, typename Output, typename Enabler = void>
-            struct type_read_exists : std::false_type
+            template <typename Type, Type Address>
+            struct signature_exists : std::true_type
+            {
+            };
+
+            template <typename Stream, typename Type, typename Enabler = void>
+            struct read_signature_exists : std::false_type
+            {
+            };
+
+            template <typename Stream, typename Type>
+            struct read_signature_exists <Stream, Type,
+                typename std::enable_if <
+                    signature_exists <Type, &Stream::read>::value,
+                    void
+                >::type>
+            {
+            };
+            
+            template <typename Input, typename Output, typename Enabler>
+            struct read_type_exists_impl : std::false_type
             {
             };
 
             template <typename Input, typename Output>
-            struct type_read_exists <Input, Output,
+            struct read_type_exists_impl <Input, Output,
                 typename std::enable_if <
-                    std::is_same <
-                        decltype(std::declval <Input> ().read(std::declval <Output&> ())),
-                        decltype(std::declval <Input> ().read(std::declval <Output&> ()))
-                    >::value
+                    read_signature_exists <Input, bool (Input::*)(Output&)>::value,
+                    void
                 >::type> : std::true_type
             {
             };
 
-            template <typename Input, typename Output, typename Enabler = void>
-            struct count_read_exists : std::false_type
+            template <typename Input, std::size_t N, typename Enabler>
+            struct read_count_exists_impl : std::false_type
+            {
+            };
+
+            template <typename Input, std::size_t N>
+            struct read_count_exists_impl <Input, N, 
+                decltype(
+                    std::declval <Input> ().template read <N> (std::declval <char*> ()), 
+                    void()
+                )> : std::true_type
+            {
+            };
+
+            template <typename Stream, typename Type, typename Enabler = void>
+            struct write_signature_exists : std::false_type
+            {
+            };
+
+            template <typename Stream, typename Type>
+            struct write_signature_exists <Stream, Type,
+                typename std::enable_if <
+                    signature_exists <Type, &Stream::write>::value,
+                    void
+                >::type> : std::true_type
+            {
+            };
+            
+            template <typename Input, typename Output, typename Enabler>
+            struct write_type_exists_impl : std::false_type
             {
             };
 
             template <typename Input, typename Output>
-            struct count_read_exists <Input, Output,
+            struct write_type_exists_impl <Input, Output,
                 typename std::enable_if <
-                    std::is_same <
-                        decltype(std::declval <Input> ().template write <sizeof (Output)> (std::declval <char*> ())),
-                        decltype(std::declval <Input> ().template write <sizeof (Output)> (std::declval <char*> ()))
-                    >::value
+                    write_signature_exists <Output, bool (Output::*)(Input const&)>::value ||
+                    write_signature_exists <Output, bool (Output::*)(Input)>::value,
+                    void
                 >::type> : std::true_type
             {
             };
 
+            template <std::size_t N, typename Output, typename Enabler>
+            struct write_count_exists_impl : std::false_type
+            {
+            };
+
+            template <std::size_t N, typename Output>
+            struct write_count_exists_impl <N, Output, 
+                decltype(
+                    std::declval <Output> ().template write <N> (std::declval <char const*> ()), 
+                    void()
+                )> : std::true_type
+            {
+            };
+
+#ifndef FRAMEWORK_SERIALIZABLE_NO_FUNDAMENTAL
             template <typename Input, typename Output>
             typename std::enable_if <
-                type_read_exists <Input, Output>::value,
+                read_type_exists <Input, Output>::value,
                 bool
             >::type read (Input& in, Output& out)
             {
@@ -59,8 +112,8 @@ namespace framework
             
             template <typename Input, typename Output>
             typename std::enable_if <
-                !type_read_exists <Input, Output>::value &&
-                count_read_exists <Input, Output>::value,
+                !read_type_exists <Input, Output>::value &&
+                read_count_exists <Input, sizeof(Output)>::value,
                 bool
             >::type read (Input& in, Output& out)
             {
@@ -72,8 +125,8 @@ namespace framework
             
             template <typename Input, typename Output>
             typename std::enable_if <
-                !type_read_exists <Input, Output>::value &&
-                !count_read_exists <Input, Output>::value,
+                !read_type_exists <Input, Output>::value &&
+                !read_count_exists <Input, sizeof(Output)>::value,
                 bool
             >::type read (Input& in, Output& out)
             {
@@ -83,41 +136,9 @@ namespace framework
                 return true;
             }
 
-            template <typename Input, typename Output, typename Enabler = void>
-            struct type_write_exists : std::false_type
-            {
-            };
-
-            template <typename Input, typename Output>
-            struct type_write_exists <Input, Output,
-                typename std::enable_if <
-                    std::is_same <
-                        decltype(std::declval <Output> ().template write <Input> (std::declval <Input const&> ())),
-                        decltype(std::declval <Output> ().template write <Input> (std::declval <Input const&> ()))
-                    >::value
-                >::type> : std::true_type
-            {
-            };
-
-            template <typename Input, typename Output, typename Enabler = void>
-            struct count_write_exists : std::false_type
-            {
-            };
-
-            template <typename Input, typename Output>
-            struct count_write_exists <Input, Output,
-                typename std::enable_if <
-                    std::is_same <
-                        decltype(std::declval <Output> ().template write <sizeof (Input)> (std::declval <char const*> ())),
-                        decltype(std::declval <Output> ().template write <sizeof (Input)> (std::declval <char const*> ()))
-                    >::value
-                >::type> : std::true_type
-            {
-            };
-
             template <typename Input, typename Output>
             typename std::enable_if <
-                type_write_exists <Input, Output>::value,
+                write_type_exists <Input, Output>::value,
                 bool
             >::type write (Input const& in, Output& out)
             {
@@ -129,8 +150,8 @@ namespace framework
             
             template <typename Input, typename Output>
             typename std::enable_if <
-                !type_write_exists <Input, Output>::value &&
-                count_write_exists <Input, Output>::value,
+                !write_type_exists <Input, Output>::value &&
+                write_count_exists <sizeof(Input), Output>::value,
                 bool
             >::type write (Input const& in, Output& out)
             {
@@ -142,8 +163,8 @@ namespace framework
             
             template <typename Input, typename Output>
             typename std::enable_if <
-                !type_write_exists <Input, Output>::value &&
-                !count_write_exists <Input, Output>::value,
+                !write_type_exists <Input, Output>::value &&
+                !write_count_exists <sizeof(Input), Output>::value,
                 bool
             >::type write (Input const& in, Output& out)
             {
@@ -182,4 +203,3 @@ namespace framework
 #endif
     }
 }
-

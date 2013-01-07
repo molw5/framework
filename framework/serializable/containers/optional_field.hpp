@@ -14,6 +14,7 @@
 
 #include <sstream>
 
+#include <framework/serializable/streams/stream_wrapper.hpp>
 #include <framework/serializable/base_types.hpp>
 
 namespace framework
@@ -25,8 +26,12 @@ namespace framework
         * \brief Optional field input stream wrapper.
         */
         template <typename Stream, typename Type>
-        class optional_field_input_wrapper
+        class optional_field_input_wrapper : private stream_wrapper <optional_field_input_wrapper <Stream, Type>, Stream>
         {
+            private:
+                using base = stream_wrapper <optional_field_input_wrapper <Stream, Type>, Stream>;
+                friend base;
+
             public:
                 /**
                 * \brief Wrapper constructor.
@@ -36,7 +41,7 @@ namespace framework
                 * condition is not met is undefined.
                 */
                 optional_field_input_wrapper (Stream& stream, Type const& flags)
-                    : p_tStream(stream),
+                    : base(stream),
                       p_iFlags(flags)
                 {
                 }
@@ -48,19 +53,13 @@ namespace framework
                 { 
                     return p_iFlags & flag; 
                 }
-                
+
                 /**
-                * \brief Read forwarder.
+                * \brief Read forwarders.
                 */
-                template <typename... Args>
-                auto read (Args&&... args) ->
-                decltype(std::declval <Stream> ().read(std::forward <Args> (args)...))
-                {
-                    return p_tStream.read(std::forward <Args> (args)...);
-                }
+                using base::read;
 
             private:
-                Stream& p_tStream;
                 Type const& p_iFlags;
         };
 
@@ -69,8 +68,12 @@ namespace framework
         * \brief Optional field output stream wrapper.
         */
         template <typename Stream, typename Type>
-        class optional_field_output_wrapper
+        class optional_field_output_wrapper : private stream_wrapper <optional_field_output_wrapper <Stream, Type>, Stream>
         {
+            private:
+                using base = stream_wrapper <optional_field_output_wrapper <Stream, Type>, Stream>;
+                friend base;
+
             public:
                 /**
                 * \brief Wrapper constructor.
@@ -80,7 +83,7 @@ namespace framework
                 * condition is not met is undefined.
                 */
                 optional_field_output_wrapper (Stream& stream, Type& flags)
-                    : p_tStream(stream),
+                    : base(stream),
                       p_iFlags(flags)
                 {
                 }
@@ -91,17 +94,11 @@ namespace framework
                 void setFlag (Type const& flag) { p_iFlags |= flag; }
 
                 /**
-                * \brief Write forwarder.
+                * \brief Write forwarders.
                 */
-                template <typename... Args>
-                auto write (Args&&... args) ->
-                decltype(std::declval <Stream> ().write(std::forward <Args> (args)...))
-                {
-                    return p_tStream.write(std::forward <Args> (args)...);
-                }
+                using base::write;
 
             private:
-                Stream& p_tStream;
                 Type& p_iFlags;
         };
 
