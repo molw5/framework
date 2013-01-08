@@ -78,7 +78,7 @@ namespace framework
                     return result + unroll <State, remainder>::run(this_ptr, s);
                 }
             };
-        
+
             template <std::size_t ByteCount, framework::byte_order ByteOrder>
             class modular_sum_impl
             {
@@ -241,30 +241,69 @@ namespace framework
                 using base = detail::modular_sum_impl <2, ByteOrder>;
                 using buffer_type = typename base::buffer_type;
 
+                template <typename Type, std::size_t N = sizeof(Type)>
+                Type create (char const* s)
+                {
+                    Type tmp {0};
+                    memcpy(&tmp, s, N);
+                    return tmp;
+                }
+
             public:
                 using base::write;
                 using base::get;
 
-#ifdef FRAMEWORK_MODULAR_SUM_UNSAFE
-    #if FRAMEWORK_MODULAR_SUM_UNSAFE == 0
-        // Worst case this optimization will overflow the deferred carry buffer after summing on the order of 512TB worth of data
-        #define FRAMEWORK_MODULAR_SUM_FOLD static_assert(sizeof(buffer_type) == 8, "This optimization requires sizeof(uint_fast16_t) == 8")
-    #elif FRAMEWORK_MODULAR_SUM_UNSAFE == 1
-        // This optimization is reasonably safe, provided modular_sum_impl is conservative in it's overflow estimate
-        #define FRAMEWORK_MODULAR_SUM_FOLD this->p_iSum = (this->p_iSum & base::value_mask) + (this->p_iSum >> base::value_shift)
-    #elif FRAMEWORK_MODULAR_SUM_UNSAFE == 2
-        // Worst case this optimization will overflow the deferred carry buffer after summing on the order of 8GB worth of data
-        #define FRAMEWORK_MODULAR_SUM_FOLD static_assert(sizeof(buffer_type) == 8, "The optimization requires sizeof(uint_fast16_t) == 8")
+#ifndef FRAMEWORK_MODULAR_SUM_SUPPRESS_OPTIMIZATIONS
+    #if FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
+        #define FRAMEWORK_MODULAR_SUM_USE_OPTIMIZATIONS
+                enum{ host_shift = 0 };
+    #elif FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_BIG_ENDIAN
+        #define FRAMEWORK_MODULAR_SUM_USE_OPTIMIZATIONS
+                enum{ host_shift = 1 };
     #else
-        #error "Unknown optimization type"
+        #define FRAMEWORK_MODULAR_SUM_SUPPRESS_OPTIMIZATIONS
     #endif
-#else
-    #define FRAMEWORK_MODULAR_SUM_FOLD this->p_iSum = (this->p_iSum & base::value_mask) + (this->p_iSum >> base::value_shift)
 #endif
+
+#ifndef FRAMEWORK_MODULAR_SUM_SUPPRESS_OPTIMIZATIONS
+    #ifdef FRAMEWORK_MODULAR_SUM_UNSAFE
+        #if FRAMEWORK_MODULAR_SUM_UNSAFE == 0
+            // Worst case this optimization will overflow the deferred carry buffer after summing on the order of 512TB worth of data
+            #define FRAMEWORK_MODULAR_SUM_FOLD static_assert(sizeof(buffer_type) == 8, "This optimization requires sizeof(uint_fast16_t) == 8")
+        #elif FRAMEWORK_MODULAR_SUM_UNSAFE == 1
+            // This optimization is reasonably safe, provided modular_sum_impl is conservative in it's overflow estimate
+            #define FRAMEWORK_MODULAR_SUM_FOLD this->p_iSum = (this->p_iSum & base::value_mask) + (this->p_iSum >> base::value_shift)
+        #elif FRAMEWORK_MODULAR_SUM_UNSAFE == 2
+            // Worst case this optimization will overflow the deferred carry buffer after summing on the order of 8GB worth of data
+            #define FRAMEWORK_MODULAR_SUM_FOLD static_assert(sizeof(buffer_type) == 8, "The optimization requires sizeof(uint_fast16_t) == 8")
+        #else
+            #error "Unknown optimization type"
+        #endif
+    #else
+        #define FRAMEWORK_MODULAR_SUM_FOLD this->p_iSum = (this->p_iSum & base::value_mask) + (this->p_iSum >> base::value_shift)
+    #endif
+
+                template <std::size_t N>
+                bool write (char const* s)
+                {
+                    switch (N)
+                    {
+                        case 0: return true;
+                        case 1: return write(create <uint8_t> (s));
+                        case 2: return write(create <uint16_t> (s));
+                        case 3:
+                        case 4: return write(create <uint32_t> (s));
+                        case 5:
+                        case 6:
+                        case 7:
+                        case 8: return write(create <uint64_t> (s));
+                        default: return base::template write <N> (s);
+                    }
+                }
 
                 bool write (uint8_t value)
                 {
-                    auto const offset = base::offset + base::multiplier*this->p_iState;
+                    auto const offset = base::offset + base::multiplier*((this->p_iState + host_shift) % 2);
                     this->p_iState = (this->p_iState + 1) % 2;
                     this->p_iSum += static_cast <buffer_type> (value) << offset;
                     FRAMEWORK_MODULAR_SUM_FOLD;
@@ -273,7 +312,7 @@ namespace framework
 
                 bool write (uint16_t value)
                 {
-                    auto const offset = base::offset + base::multiplier*this->p_iState;
+                    auto const offset = base::offset + base::multiplier*((this->p_iState + host_shift) % 2);
                     this->p_iSum += static_cast <buffer_type> (value) << offset;
                     FRAMEWORK_MODULAR_SUM_FOLD;
                     return true;
@@ -281,14 +320,14 @@ namespace framework
 
                 bool write (uint32_t value)
                 {
-                    auto const offset = base::offset + base::multiplier*this->p_iState;
+                    auto const offset = base::offset + base::multiplier*((this->p_iState + host_shift) % 2);
 
-#if FRAMEWORK_MODULAR_SUM_UNSAFE >= 1
+    #if FRAMEWORK_MODULAR_SUM_UNSAFE >= 1
                     this->p_iSum += static_cast <buffer_type> (value) << offset;
-#else
+    #else
                     auto const tmp = (value >> 16) + (value & 0xFFFF);
                     this->p_iSum += static_cast <buffer_type> (tmp) << offset;
-#endif
+    #endif
 
                     FRAMEWORK_MODULAR_SUM_FOLD;
                     return true;
@@ -296,19 +335,20 @@ namespace framework
                 
                 bool write (uint64_t value)
                 {
-                    auto const offset = base::offset + base::multiplier*this->p_iState;
+                    auto const offset = base::offset + base::multiplier*((this->p_iState + host_shift) % 2);
                     auto const tmp1 = (value >> 32) + (value & 0xFFFFFFFF);
 
-#if FRAMEWORK_MODULAR_SUM_UNSAFE >= 1
+    #if FRAMEWORK_MODULAR_SUM_UNSAFE >= 1
                     this->p_iSum += static_cast <buffer_type> (tmp1) << offset;
-#else
+    #else
                     auto const tmp2 = (tmp1 >> 16) + (tmp1 & 0xFFFF);
                     this->p_iSum += static_cast <buffer_type> (tmp2) << offset;
-#endif
+    #endif
 
                     FRAMEWORK_MODULAR_SUM_FOLD;
                     return true;
                 }
+#endif
         };
     }
 }

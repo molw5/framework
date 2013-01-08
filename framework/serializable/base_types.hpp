@@ -76,14 +76,8 @@ namespace framework
     {
         namespace detail
         {
-            template <typename Input, typename Output, typename Enabler = void>
-            struct read_type_exists_impl;
-            
             template <typename Input, std::size_t N, typename Enabler = void>
             struct read_count_exists_impl;
-
-            template <typename Input, typename Output, typename Enabler = void>
-            struct write_type_exists_impl;
 
             template <std::size_t N, typename Output, typename Enabler = void>
             struct write_count_exists_impl;
@@ -273,46 +267,15 @@ namespace framework
             >::type>
         {
             /**
-            * Reads the output value as a raw stream of \c sizeof(out) bytes.  This method allows the presence of specialized
-            * read methods with the following precedence:
-            *
-            * \code
-            * //most specialized
-            * in.read(out); //see \c read_type_exists
-            * in.read <sizeof(T)> (reinterpret_cast <char*> (std::addressof(out))); //see \c read_count_exists
-            * in.read(reinterpret_cast <char*> (std::addressof(out));
-            * //least specialized
-            * \endcode
+            * Reads the output value as a raw stream of \c sizeof(out) bytes.  This method allows for the presence of
+            * a write override accepting the byte count as a template parameter.
             */
             template <typename Input>
             static bool read (Input& in, T& out);
 
             /**
-            * Reads the output value as a raw stream of \c sizeof(out) bytes.  This method allows the presence of specialized
-            * read methods with the following precedence:
-            *
-            * \code
-            * //most specialized
-            * in.read(out); //see \c read_type_exists
-            * in.read <sizeof(T)> (reinterpret_cast <char*> (std::addressof(out))); //see \c read_count_exists
-            * in.read(reinterpret_cast <char*> (std::addressof(out));
-            * //least specialized
-            * \endcode
-            *
-            * Note that the most specialized writer above requires that the provided overload accepts a type \em exactly matching
-            * T, as demonstrated below:
-            *
-            * \code
-            * // given the following overloads present in Output
-            * //   1. bool write (uint16_t);
-            * //   2. bool write (uint64_t const&);
-            * //   3. bool write (char const*, std::size_t);
-            * write((uint8_t)0, out); // calls 3
-            * write((uint16_t)0, out); // calls 1
-            * write((uint32_t)0, out); // calls 3
-            * write((uint64_t)0, out); // calls 2
-            * write(((double)0.0, out); // calls 3
-            * \endcode
+            * Reads the output value as a raw stream of \c sizeof(out) bytes.  This method allows the presence of a read
+            * override accepting the byte count as a template parameter.
             */
             template <typename Output>
             static bool write (T const& in, Output& out);
@@ -354,27 +317,6 @@ namespace framework
         };
 
         /**
-        * Determines if a read method is present in Input matching one of the following signatures:
-        *
-        * \code
-        * bool (Input::*)(Output&)
-        * \endcode
-        *
-        * \todo
-        * The above is likely more restrictive than necessary.  Check the conversion operations allowed by the
-        * standard for this type of input; if suitably restrictive ease this requirement.
-        */
-        template <typename Input, typename Output>
-        struct read_type_exists :
-            std::conditional <
-                detail::read_type_exists_impl <Input, Output>::value,
-                std::true_type,
-                std::false_type
-            >::type
-        {
-        };
-
-        /**
         * Determines if a read method is present in Input with a signature compatible with the following:
         *
         * \code
@@ -391,34 +333,6 @@ namespace framework
         {
         };
 
-        /**
-        * Determines if a write method is present in Output matching one of the following signatures:
-        *
-        * \code
-        * bool (Output::*)(Input const&)
-        * bool (Output::*)(Input)
-        * \endcode
-        *
-        * The method signature must match the above exactly - this requirement was added to avoid allowing dangerous type conversions.
-        * Specifically, we could check for a compatible Output method with a construct similar to:
-        *
-        * \code
-        * decltype(std::declval <Output> ().write(std::declval <Input const&> ()))
-        * \endcode
-        *
-        * This would allow variants on the above signatures, however the allowed implicit conversions make resulting code fragile.  It
-        * is unlikely that an overload accepting a uint8_t value was intended to serialize other integral types, for example.
-        */
-        template <typename Input, typename Output>
-        struct write_type_exists :
-            std::conditional <
-                detail::write_type_exists_impl <Input, Output>::value,
-                std::true_type,
-                std::false_type
-            >::type
-        {
-        };
-        
         /**
         * Determines if a write method is present in Output with a signature compatible with the following:
         *

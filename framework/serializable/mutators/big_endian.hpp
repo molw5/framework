@@ -19,10 +19,13 @@ namespace framework
 {
     namespace serializable
     {
-        namespace detail
+        namespace big_endian_impl
         {
             template <typename T, typename Enabler = void>
-            struct big_endian_impl;
+            struct to_host;
+
+            template <typename T, typename Enabler = void>
+            struct from_host;
         }
 
         /**
@@ -42,20 +45,21 @@ namespace framework
         };
 
         /**
-        * \headerfile big_endian.hpp <framework/serializable/mutators/big_endian.hpp>
+        * \headerfile big_endian.inl <framework/serializable/mutators/big_endian.hpp>
         * \brief \c big_endian serialization.
         */
         template <typename T>
         struct serializable_specification <big_endian <T>>
         {
             private:
+                /**
+                * \brief Underlying value type definition.
+                */
                 using value_type = typename type_extractor <T>::type;
                 
             public:
                 /**
-                * \brief Reads the value.
-                *
-                * Reads a value of type T from the input stream using big endian 
+                * Reads a value of type T from the input stream using big endian
                 * byte ordering.
                 *
                 * \param in input stream
@@ -68,15 +72,12 @@ namespace framework
                     if (!serializable_specification <T>::read(in, value))
                         return false;
 
-                    detail::big_endian_impl <value_type>::to_host(value);
-                    out = std::move(value);
+                    out = big_endian_impl::to_host <value_type>::run(value);
                     return true;
                 }
 
                 /**
-                * \brief Writes the value.
-                *
-                * Writes a value of type T to the output stream using big endian
+                * Writes a value of type T to the output stream using big endian 
                 * byte ordering.
                 *
                 * \param in input stream
@@ -85,10 +86,7 @@ namespace framework
                 template <typename Output>
                 static bool write (value_type const& in, Output& out)
                 {
-                    value_type value = in;
-                    detail::big_endian_impl <value_type>::from_host(value);
-
-                    if (!serializable_specification <T>::write(value, out))
+                    if (!serializable_specification <T>::write(big_endian_impl::from_host <value_type>::run(in), out))
                         return false;
                     
                     return true;

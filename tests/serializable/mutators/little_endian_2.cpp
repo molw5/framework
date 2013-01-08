@@ -16,8 +16,6 @@ SUITE(framework_serializable_mutators_little_endian_hpp_2)
     {
         using namespace framework::serializable;
 
-        // Note: The unique field identifier is used to ensure the two independent tests (*_1, *_2) instantiate
-        //       different versions of the reader.
         inline_object <
             value <NAME("Field 1"), uint16_t>,
             value <NAME("Field 2"), little_endian <uint16_t>>

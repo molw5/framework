@@ -13,10 +13,6 @@
 #include <framework/serializable/mutators/stl_array.hpp>
 #include <framework/serializable/streams/modular_sum.hpp>
 
-#if FRAMEWORK_HOST_ENDIANNESS != FRAMEWORK_LITTLE_ENDIAN
-    #error "Not supported - tests are sensitive to host-endianness"
-#endif
-
 template <typename T>
 uint16_t sum_control_1 (T& in) __attribute__ ((noinline));
 
@@ -39,21 +35,24 @@ using namespace framework::serializable;
 int main ()
 {
     int result = 0;
-
+    uint32_t tmp = 0;
+    
     auto const& start = std::chrono::high_resolution_clock::now();
     for (int i=0; i < COUNT; ++i)
     {
+        tmp = (tmp << 1) ^ i;
         inline_object <
-            value <NAME("Field 1"), uint8_t>,
-            value <NAME("Field 2"), uint64_t>,
-            value <NAME("Field 3"), uint32_t>,
-            value <NAME("Field 4"), uint8_t>,
-            value <NAME("Field 5"), uint16_t>,
-            value <NAME("Field 6"), uint8_t>,
-            value <NAME("Field 7"), uint32_t>,
-            value <NAME("Field 8"), uint64_t>,
-            value <NAME("Field 9"), uint64_t>
-        > x {i, i, i, i, i, i, i, i, i};
+            value <NAME("Version / IHL"),             big_endian <uint8_t>>,
+            value <NAME("Type of Service"),           big_endian <uint8_t>>,
+            value <NAME("Total Length"),              big_endian <uint16_t>>,
+            value <NAME("Identification"),            big_endian <uint16_t>>,
+            value <NAME("Flags / Fragment Offset"),   big_endian <uint16_t>>,
+            value <NAME("Time to Live"),              big_endian <uint8_t>>,
+            value <NAME("Protocol"),                  big_endian <uint8_t>>,
+            value <NAME("Header Checksum"),           big_endian <uint16_t>>,
+            value <NAME("Source Address"),            big_endian <uint32_t>>,
+            value <NAME("Destination Address"),       big_endian <uint32_t>>
+        > x {tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp};
 
 #ifdef SUM_CONTROL_1
         result += sum_control_1(x);
@@ -63,7 +62,7 @@ int main ()
  #else
   #ifdef SUM_CONTROL_3
         result += sum_control_3(x);
-  #else
+  #else      
    #ifdef SUM_TEST
         result += sum_test(x);
    #else
@@ -80,7 +79,7 @@ int main ()
     std::cout << "Result: " << result << std::endl;
     std::cout << "Duration: " << duration.count() << "ns" << std::endl;
     std::cout << "Operation Time: " << double(duration.count()) / double(COUNT) << "ns" << std::endl;
-    std::cout << "Time Per Byte: " << double(duration.count()) / double(37*COUNT) << "ns" << std::endl;
+    std::cout << "Time Per Byte: " << double(duration.count()) / double(20*COUNT) << "ns" << std::endl;
 
     return 0;
 }
@@ -88,87 +87,40 @@ int main ()
 template <typename T>
 uint16_t sum_control_1 (T& in)
 {
-    // Literal translation, byte by byte
-    auto result = static_cast <uint32_t> (
-        (static_cast <uint32_t> (get <NAME("Field 1")> (in)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 2")> (in) >>  0) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 2")> (in) >>  8) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 2")> (in) >> 16) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 2")> (in) >> 24) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 2")> (in) >> 32) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 2")> (in) >> 40) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 2")> (in) >> 48) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 2")> (in) >> 56) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 3")> (in) >>  0) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 3")> (in) >>  8) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 3")> (in) >> 16) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 3")> (in) >> 24) & 0xFF)) << 8) +
-        (static_cast <uint32_t> (get <NAME("Field 4")> (in)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 5")> (in) >>  0) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 5")> (in) >>  8) & 0xFF)) << 0) +
-        (static_cast <uint32_t> (get <NAME("Field 6")> (in)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 7")> (in) >>  0) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 7")> (in) >>  8) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 7")> (in) >> 16) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 7")> (in) >> 24) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 8")> (in) >>  0) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 8")> (in) >>  8) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 8")> (in) >> 16) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 8")> (in) >> 24) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 8")> (in) >> 32) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 8")> (in) >> 40) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 8")> (in) >> 48) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 8")> (in) >> 56) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 9")> (in) >>  0) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 9")> (in) >>  8) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 9")> (in) >> 16) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 9")> (in) >> 24) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 9")> (in) >> 32) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 9")> (in) >> 40) & 0xFF)) << 8) +
-        (((static_cast <uint32_t> (get <NAME("Field 9")> (in) >> 48) & 0xFF)) << 0) +
-        (((static_cast <uint32_t> (get <NAME("Field 9")> (in) >> 56) & 0xFF)) << 8));
+    // Optimized summation
+    uint64_t result =
+        static_cast <uint64_t> (get <NAME("Type of Service")> (in)) +
+        static_cast <uint64_t> (get <NAME("Total Length")> (in)) +
+        static_cast <uint64_t> (get <NAME("Identification")> (in)) +
+        static_cast <uint64_t> (get <NAME("Flags / Fragment Offset")> (in)) +
+        static_cast <uint64_t> (get <NAME("Protocol")> (in)) + 
+        static_cast <uint64_t> (get <NAME("Header Checksum")> (in)) +
+        static_cast <uint64_t> (get <NAME("Source Address")> (in)) +
+        static_cast <uint64_t> (get <NAME("Destination Address")> (in));
+
+    result <<= 8;
+    result += 
+        static_cast <uint64_t> (get <NAME("Version / IHL")> (in)) +
+        static_cast <uint64_t> (get <NAME("Time to Live")> (in));
 
     while (result >> 16)
         result = (result & 0xFFFF) + (result >> 16);
 
-    return ~result;
-}
-
-template <typename T>
-uint16_t sum_control_2 (T& in)
-{
-    // Optimized summation
-    uint64_t tmp1 = 
-        (get <NAME("Field 2")> (in) >> 32) +
-        (get <NAME("Field 2")> (in) & 0xFFFFFFFF) +
-        static_cast <uint64_t> (get <NAME("Field 3")> (in)) +
-        static_cast <uint64_t> (get <NAME("Field 4")> (in)) +
-        static_cast <uint64_t> (get <NAME("Field 7")> (in)) +
-        (get <NAME("Field 8")> (in) >> 32) +
-        (get <NAME("Field 8")> (in) & 0xFFFFFFFF) +
-        (get <NAME("Field 9")> (in) >> 32) +
-        (get <NAME("Field 9")> (in) & 0xFFFFFFFF);
-
-    uint32_t tmp2 = 
-        static_cast <uint32_t> (get <NAME("Field 1")> (in)) +
-        static_cast <uint32_t> (get <NAME("Field 5")> (in)) +
-        static_cast <uint32_t> (get <NAME("Field 6")> (in));
-
-    tmp1 = (tmp1 & 0xFFFFFFFF) + (tmp1 >> 32);
-    tmp1 = (tmp1 & 0xFFFF) + (tmp1 >> 16);
-    tmp2 = (tmp2 & 0xFFFF) + (tmp2 >> 16);
-    tmp2 = tmp1 + (tmp2 << 8);
-    tmp2 = (tmp2 & 0xFFFF) + (tmp2 >> 16);
-    tmp2 = (tmp2 & 0xFFFF) + (tmp2 >> 16);
-
-    return ~tmp2;
+#if FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
+    return ~FRAMEWORK_BYTESWAP16(static_cast <uint16_t> (result));
+#elif FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_BIG_ENDIAN
+    return ~static_cast <uint16_t> (result);
+#else
+    #error "Host endianness not supported"
+#endif
 }
 
 struct unsafe_buffer
 {
     unsafe_buffer ()
         : it(reinterpret_cast <char*> (&buffer[0])),
-          begin(reinterpret_cast <char*> (&buffer[0]))
+          begin(reinterpret_cast <char*> (&buffer[0])),
+          end(reinterpret_cast <char*> (&buffer[128]))
     {
     }
 
@@ -181,11 +133,12 @@ struct unsafe_buffer
 
     char* it;
     char* const begin;
+    char* const end;
     uint16_t buffer[128];
 };
 
 template <typename T>
-uint16_t sum_control_3 (T& in)
+uint16_t sum_control_2 (T& in)
 {
     // Buffered summation
     unsafe_buffer ss;
@@ -200,10 +153,43 @@ uint16_t sum_control_3 (T& in)
     if (size % 2)
         result += ss.buffer[size/2+1];
 
-    result <<= 8;
-    result = (result & 0xFFFF) + (result >> 16);
-    result = (result & 0xFFFF) + (result >> 16);
+    while (result >> 16)
+        result = (result & 0xFFFF) + (result >> 16);
+
+#if FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
     return ~static_cast <uint16_t> (result);
+#elif FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_BIG_ENDIAN
+    return ~FRAMEWORK_BYTESWAP16(static_cast <uint16_t> (result));
+#else
+    #error "Host endianness not supported"
+#endif
+}
+
+template <typename T>
+uint16_t sum_control_3 (T& in)
+{
+    // Raw summation
+    static_assert(sizeof(in) == 20, "failed");
+    uint32_t buffer[5];
+    memcpy(&buffer, &in, 20);
+
+    uint64_t result = 
+        static_cast <uint64_t> (buffer[0]) + 
+        static_cast <uint64_t> (buffer[1]) + 
+        static_cast <uint64_t> (buffer[2]) + 
+        static_cast <uint64_t> (buffer[3]) + 
+        static_cast <uint64_t> (buffer[4]);
+
+    while (result >> 16)
+        result = (result & 0xFFFF) + (result >> 16);
+
+#if FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
+    return ~static_cast <uint16_t> (result);
+#elif FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_BIG_ENDIAN
+    return ~FRAMEWORK_BYTESWAP16(static_cast <uint16_t> (result));
+#else
+    #error "Host endianness not supported"
+#endif
 }
 
 template <typename T>
@@ -212,7 +198,7 @@ uint16_t sum_test (T& in)
     // Modular sum test
     internet_checksum out;
     if (!write(in, out))
-        throw std::runtime_error("Failed");
+        exit(1);
 
     return out.get();
 }

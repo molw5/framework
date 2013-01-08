@@ -1,59 +1,102 @@
 // Copyright (C) 2012 iwg molw5
 // For conditions of distribution and use, see copyright notice in COPYING
 
-#include <algorithm>
-
 #include <framework/common/endian.hpp>
+#include <framework/common/byte_swap.hpp>
 
 namespace framework
 {
     namespace serializable
     {
-        // TODO: Replace with wrapper around portable endianness conversion library
-        //       if possible (possibly Boost.Endian if added).  This implementation is
-        //       a trivial placeholder; efficiency was not a priority here.
-
-        namespace detail
+        namespace little_endian_impl
         {
-            template <typename T>
-            struct little_endian_impl <T, typename std::enable_if <std::is_integral <T>::value, void>::type>
-            {
-                static void to_host (T& value)
-                {
-                    (void)value; // suppress unused value warning
 #if FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
+    #define TO_HOST(Type, Macro) \
+            template <typename T> \
+            struct to_host <T, \
+                typename std::enable_if < \
+                    std::is_integral <T>::value && \
+                    sizeof(T) == sizeof(Type), \
+                    void \
+                >::type> \
+            { \
+                static T run (T const& value) \
+                { \
+                    return value; \
+                } \
+            }
 #elif FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_BIG_ENDIAN
-                    std::reverse(reinterpret_cast <char*> (&value), reinterpret_cast <char*> (&value) + sizeof(value));
+    #define TO_HOST(Type, Macro) \
+            template <typename T> \
+            struct to_host <T, \
+                typename std::enable_if < \
+                    std::is_integral <T>::value && \
+                    sizeof(T) == sizeof(Type), \
+                    void \
+                >::type> \
+            { \
+                static T run (T const& value) \
+                { \
+                    return static_cast <T> (Macro(static_cast <Type> (value))); \
+                } \
+            }
 #else
-                    static_assert(!std::is_same <T, T>::value, "little_endian does not support host endianness");
+    #error "little_endian does not support host endianness"
 #endif
-                }
 
-                static void from_host (T& value)
-                {
-                    // identical to to_host for supported host types
-                    to_host(value);
-                }
-            };
+            TO_HOST(uint8_t, FRAMEWORK_BYTESWAP8);
+            TO_HOST(uint16_t, FRAMEWORK_BYTESWAP16);
+            TO_HOST(uint32_t, FRAMEWORK_BYTESWAP32);
+            TO_HOST(uint64_t, FRAMEWORK_BYTESWAP64);
+#undef TO_HOST
 
-            template <typename T>
-            struct little_endian_impl <T, typename std::enable_if <std::is_floating_point <T>::value, void>::type>
-            {
-                static void to_host (T& value)
-                {
-                    (void)value; // suppress unused value warning
 #if FRAMEWORK_HOST_FLOAT_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
+    #define TO_HOST(Type, Macro) \
+            template <typename T> \
+            struct to_host <T, \
+                typename std::enable_if < \
+                    std::is_floating_point <T>::value && \
+                    sizeof(T) == sizeof(Type), \
+                    void \
+                >::type> \
+            { \
+                static T run (T const& value) \
+                { \
+                    return value; \
+                } \
+            }
 #elif FRAMEWORK_HOST_FLOAT_ENDIANNESS == FRAMEWORK_BIG_ENDIAN
-                    std::reverse(reinterpret_cast <char*> (&value), reinterpret_cast <char*> (&value) + sizeof(value));
+    #define TO_HOST(Type, Macro) \
+            template <typename T> \
+            struct to_host <T, \
+                typename std::enable_if < \
+                    std::is_floating_point <T>::value && \
+                    sizeof(T) == sizeof(Type), \
+                    void \
+                >::type> \
+            { \
+                static T run (T const& value) \
+                { \
+                    return static_cast <T> (Macro(static_cast <Type> (value))); \
+                } \
+            }
 #else
-                    static_assert(false, "little_endian does not support host endianness");
+    #error "little_endian does not support host endianness"
 #endif
-                }
 
-                static void from_host (T& value)
+            TO_HOST(uint8_t, FRAMEWORK_BYTESWAP8);
+            TO_HOST(uint16_t, FRAMEWORK_BYTESWAP16);
+            TO_HOST(uint32_t, FRAMEWORK_BYTESWAP32);
+            TO_HOST(uint64_t, FRAMEWORK_BYTESWAP64);
+#undef TO_HOST
+
+            // The implementations are symmetric for the current supported endianness
+            template <typename T, typename Enabler>
+            struct from_host
+            {
+                static T run (T const& value)
                 {
-                    // identical to to_host for supported host types
-                    to_host(value);
+                    return to_host <T>::run(value);
                 }
             };
         }

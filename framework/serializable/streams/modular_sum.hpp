@@ -29,7 +29,7 @@ namespace framework
         {
             template <std::size_t ByteCount, framework::byte_order ByteOrder>
             class modular_sum_impl;
-        };
+        }
 
         /**
         * \headerfile modular_sum.hpp <framework/serializable/streams/modular_sum.hpp>

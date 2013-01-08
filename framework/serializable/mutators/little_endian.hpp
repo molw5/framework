@@ -19,10 +19,13 @@ namespace framework
 {
     namespace serializable
     {
-        namespace detail
+        namespace little_endian_impl
         {
             template <typename T, typename Enabler = void>
-            struct little_endian_impl;
+            struct to_host;
+
+            template <typename T, typename Enabler = void>
+            struct from_host;
         }
 
         /**
@@ -69,8 +72,7 @@ namespace framework
                     if (!serializable_specification <T>::read(in, value))
                         return false;
 
-                    detail::little_endian_impl <value_type>::to_host(value);
-                    out = std::move(value);
+                    out = little_endian_impl::to_host <value_type>::run(value);
                     return true;
                 }
 
@@ -84,10 +86,7 @@ namespace framework
                 template <typename Output>
                 static bool write (value_type const& in, Output& out)
                 {
-                    value_type value = in;
-                    detail::little_endian_impl <value_type>::from_host(value);
-
-                    if (!serializable_specification <T>::write(value, out))
+                    if (!serializable_specification <T>::write(little_endian_impl::from_host <value_type>::run(in), out))
                         return false;
                     
                     return true;
