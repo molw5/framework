@@ -19,67 +19,55 @@ struct s
     }
 };
 
+template <typename Input>
+bool custom_read (Input& in, s& out)
+{
+    if (!in.read(reinterpret_cast <char*> (&out), sizeof(out)))
+        return false;
+
+    return true;
+}
+
+template <typename Output>
+bool custom_write (s const& in, Output& out)
+{
+    if (!out.write(reinterpret_cast <char const*> (&in), sizeof(in)))
+        return false;
+
+    return true;
+}
+
 namespace framework
 {
     namespace serializable
     {
-        // Specify the serialization of s
-        template <>
-        struct serializable_specification <s>
-        {
-            template <typename Input>
-            static bool read (Input& in, s& out)
-            {
-                if (!in.read(reinterpret_cast <char*> (&out), sizeof(out)))
-                    return false;
-
-                return true;
-            }
-
-            template <typename Output>
-            static bool write (s const& in, Output& out)
-            {
-                if (!out.write(reinterpret_cast <char const*> (&in), sizeof(in)))
-                    return false;
-
-                return true;
-            }
-        };
-
         // Specialize the serialization of a mutator type
-        template <typename Size>
-        struct serializable_specification <stl_vector <Size, s>>
+        template <typename Input, typename Size>
+        bool read (Input& in, type_extractor <stl_vector <Size, s>>& out, stl_vector <Size, s>*)
         {
-            private:
-                using size_type = typename type_extractor <Size>::type;
-                using container_type = typename type_extractor <stl_vector <Size, s>>::type;
+            type_extractor <Size> size;
+            if (!read <Size> (in, size))
+                return false;
 
-            public:
-                template <typename Input>
-                static bool read (Input& in, container_type& out)
-                {
-                    size_type size;
-                    if (!serializable_specification <Size>::read(in, size))
-                        return false;
+            out.resize(size);
+            if (!in.read(reinterpret_cast <char*> (&out[0]), out.size()*sizeof(out[0])))
+                return false;
 
-                    out.resize(size);
-                    if (!in.read(reinterpret_cast <char*> (&out[0]), out.size()*sizeof(out[0])))
-                        return false;
+            return true;
+        }
     
-                    return true;
-                }
-    
-                template <typename Output>
-                static bool write (container_type const& in, Output& out)
-                {
-                    if (!serializable_specification <Size>::write(in.size(), out))
-                        return false;
-                    if (!out.write(reinterpret_cast <char const*> (&in[0]), in.size()*sizeof(in[0])))
-                        return false;
-    
-                    return true;
-                }
-        };
+        template <typename Output, typename Size>
+        bool write (type_extractor <stl_vector <Size, s>> const& in, Output& out, stl_vector <Size, s>*)
+        {
+            type_extractor <Size> const& size = in.size();
+            if (!write <Size> (size, out))
+                return false;
+
+            if (!out.write(reinterpret_cast <char const*> (&in[0]), in.size()*sizeof(in[0])))
+                return false;
+
+            return true;
+        }
     }
 }
 

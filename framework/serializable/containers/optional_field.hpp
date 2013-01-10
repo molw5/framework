@@ -116,55 +116,59 @@ namespace framework
 
         /**
         * \headerfile optional_field.hpp <framework/serializable/containers/optional_field.hpp>
-        * \brief Optional field serialization implementation.
+        * \brief Read overload.
+        * \param in input stream
+        * \param out output object
+        * \return true on success, false on failure
         */
-        template <typename Type, typename... Specification>
-        struct serializable_specification <optional_field <Type, Specification...>>
+        template <
+            typename Input,
+            typename Output,
+            typename Type, 
+            typename... Specification>
+        bool dispatch_read (Input& in, Output& out, optional_field <Type, Specification...>*)
         {
-            /**
-            * \brief Read container.
-            * \param in input stream
-            * \param out output object
-            * \return true on success, false on failure
-            */
-            template <typename Input, typename Output>
-            static bool read (Input& in, Output& out)
-            {
-                value_type value;
-                if (!serializable_specification <Type>::read(in, value))
-                    return false;
-                
-                optional_field_input_wrapper <Input, value_type> wrapper{in, value};
-                return serializable_specification <alias <Specification...>>::read(wrapper, out);
-            }
+            using value_type = type_extractor <Type>;
 
-            /**
-            * \brief Write container.
-            * \param in input stream
-            * \param out output object
-            * \return true on success, false on failure
-            */
-            template <typename Input, typename Output>
-            static bool write (Input const& in, Output& out)
-            {
-                value_type value{0};
-                std::stringstream ss;
-                
-                optional_field_output_wrapper <decltype(ss), value_type> wrapper{ss, value};
-                if (!serializable_specification <alias <Specification...>>::write(in, wrapper))
-                    return false;
-                if (!serializable_specification <Type>::write(value, out))
-                    return false;
-                
-                auto const& buffer = ss.str();
-                if (!out.write(&buffer[0], buffer.size()))
-                    return false;
+            value_type value;
+            if (!dispatch_read <Type> (in, value))
+                return false;
 
-                return true;
-            }
-            
-            private:
-                using value_type = typename type_extractor <Type>::type;
-        };
+            optional_field_input_wrapper <Input, value_type> wrapper{in, value};
+            return dispatch_read <alias <Specification...>> (wrapper, out);
+        }
+
+        /**
+        * \headerfile optional_field.hpp <framework/serializable/containers/optional_field.hpp>
+        * \brief Write overload.
+        * \param in input object
+        * \param out output stream
+        * \return true on success, false on failure
+        */
+        template <
+            typename Input,
+            typename Output,
+            typename Type, 
+            typename... Specification>
+        bool dispatch_write (Input const& in, Output& out, optional_field <Type, Specification...>*)
+        {
+            using value_type = type_extractor <Type>;
+
+            value_type value{0};
+            std::stringstream ss;
+
+            optional_field_output_wrapper <decltype(ss), value_type> wrapper{ss, value};
+            if (!dispatch_write <alias <Specification...>> (in, wrapper))
+                return false;
+
+            if (!dispatch_write <Type> (value, out))
+                return false;
+
+            auto const& buffer = ss.str();
+            if (!out.write(&buffer[0], buffer.size()))
+                return false;
+
+            return true;
+        }
     }
 }

@@ -11,7 +11,7 @@ using ::framework::serializable::write;
 using ::framework::serializable::value_type;
 using ::framework::serializable::alias;
 using ::framework::serializable::serializable;
-using ::framework::serializable::get_visible_names;
+using ::framework::serializable::object_names;
 using ::framework::serializable::inline_object;
 using ::framework::serializable::extract_values;
 using ::framework::serializable::little_endian;
@@ -129,7 +129,7 @@ struct bind_object :
     public serializable <bind_object <Args...>, Args...>
 {
     private:
-        using value_names = typename get_visible_names <inline_object <Args...>>::type;
+        using value_names = object_names <inline_object <Args...>>;
 
     public:
         template <typename T>
@@ -157,34 +157,18 @@ struct bind_object :
 
 // Define a template used to bind a specification to a particular structure
 #define BIND(Specification, Structure) \
-namespace framework \
+template <typename Input> \
+bool custom_read (Input& in, Structure& out) \
 { \
-    namespace serializable \
-    { \
-        template <> \
-        struct serializable_specification <Structure> \
-        { \
-            template <typename Input> \
-            static bool read (Input& in, Structure& out) \
-            { \
-                Specification <link_implementation> wrapper(out); \
-                if (!serializable_specification <decltype(wrapper)>::read(in, wrapper)) \
-                    return false; \
+    Specification <link_implementation> wrapper(out); \
+    return read(in, wrapper); \
+} \
 \
-                return true; \
-            } \
-\
-            template <typename Output> \
-            static bool write (Structure const& in, Output& out) \
-            { \
-                Specification <const_link_implementation> wrapper(in); \
-                if (!serializable_specification <decltype(wrapper)>::write(wrapper, out)) \
-                    return false; \
-\
-                return true; \
-            } \
-        }; \
-    } \
+template <typename Output> \
+bool custom_write (Structure const& in, Output& out) \
+{ \
+    Specification <const_link_implementation> wrapper(in); \
+    return write(wrapper, out); \
 }
 
 // Usage example

@@ -10,42 +10,68 @@ namespace framework
         namespace detail
         {
             template <typename T, typename Enabler>
-            struct is_value_type_impl : std::false_type
+            struct is_value_type_impl
             {
+                using type = std::false_type;
             };
 
             template <typename T>
-            struct is_value_type_impl <T,
-                typename T::serializable_value_enabler> :
-                    std::true_type
+            struct is_value_type_impl <T, typename T::serializable_value_enabler>
             {
-            };
-            
-            template <typename T, typename Enabler>
-            struct is_default_value_serializable_impl : std::false_type
-            {
+                using type = std::true_type;
             };
 
             template <typename T>
-            struct is_default_value_serializable_impl <T,
-                typename std::enable_if <
-                    is_value_type <T>::value,
-                    void
-                >::type>
+            struct is_value_default_serializable_impl
             {
-                enum { value = T::value_default };
+                using type =
+                    typename std::enable_if <
+                        is_value_type <T>::value,
+                        typename std::conditional <
+                            T::value_default,
+                            std::true_type,
+                            std::false_type
+                        >::type
+                    >::type;
+            };
+
+            template <typename T>
+            struct value_name_impl
+            {
+                using type = 
+                    typename std::enable_if <
+                        is_value_type <T>::value,
+                        typename T::value_name
+                    >::type;
+            };
+
+            template <typename T>
+            struct value_specification_impl
+            {
+                using type =
+                    typename std::enable_if <
+                        is_value_type <T>::value,
+                        typename T::value_specification
+                    >::type;
+            };
+
+            template <typename T, typename Derived>
+            struct value_implementation_impl
+            {
+                using type =
+                    typename std::enable_if <
+                        is_value_type <T>::value,
+                        typename T::template value_implementation <Derived>
+                    >::type;
             };
         }
 
         template <
             typename Name, 
             typename Specification,
-            template <typename> class Interface>
-        struct value_type <
-            Name, 
-            Specification,
-            Interface, 
-            true>
+            template <typename> class Interface,
+            bool Default>
+        struct value_type
         {
 // GCC bug workaround - www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#580
 #if MAX_GNUC_VERSION(4, 8, 0)
@@ -53,76 +79,31 @@ namespace framework
 #else
             template <typename T, typename Enabler>
             friend struct detail::is_value_type_impl;
-    
-            template <typename T, typename Enabler>
-            friend struct detail::is_default_value_serializable_impl;
 
             template <typename T>
-            friend struct get_value_name;
-    
+            friend struct detail::is_value_default_serializable_impl;
+
             template <typename T>
-            friend struct get_value_specification;
-    
+            friend struct detail::value_name_impl;
+
+            template <typename T>
+            friend struct detail::value_specification_impl;
+
             template <typename T, typename Derived>
-            friend struct get_value_implementation;
-    
+            friend struct detail::value_implementation_impl;
+
             private:
 #endif
                 using serializable_value_enabler = void;
                 using value_name = Name;
                 using value_specification = Specification;
-                enum {value_default = true};
+                enum {value_default = Default};
 
                 template <typename T>
                 using value_implementation = Interface <T>;
 
-            private:
-                value_type () = default;
-                ~value_type () = default;
-        };
-        
-        template <
-            typename Name, 
-            typename Specification,
-            template <typename> class Interface>
-        struct value_type <
-            Name, 
-            Specification,
-            Interface, 
-            false>
-        {
-// GCC bug workaround - www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#580
-#if MAX_GNUC_VERSION(4, 8, 0)
-            public:
-#else
-            template <typename T, typename Enabler>
-            friend struct detail::is_value_type_impl;
-    
-            template <typename T, typename Enabler>
-            friend struct detail::is_default_value_serializable_impl;
-
-            template <typename T>
-            friend struct get_value_name;
-    
-            template <typename T>
-            friend struct get_value_specification;
-    
-            template <typename T, typename Derived>
-            friend struct get_value_implementation;
-    
-            private:
-#endif
-                using serializable_value_enabler = void;
-                using value_name = Name;
-                using value_specification = Specification;
-                enum {value_default = false};
-
-                template <typename T>
-                using value_implementation = Interface <T>;
-
-            private:
-                value_type () = default;
-                ~value_type () = default;
+                value_type () = delete;
+                ~value_type () = delete;
         };
     }
 }

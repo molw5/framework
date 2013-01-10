@@ -24,6 +24,6 @@ namespace framework
         * \brief Common STL array specification.
         */
         template <std::size_t Size, typename Value>
-        using stl_array = fixed_container <Value, std::array <typename type_extractor <Value>::type, Size>>;
+        using stl_array = fixed_container <Value, std::array <type_extractor <Value>, Size>>;
     }
 }

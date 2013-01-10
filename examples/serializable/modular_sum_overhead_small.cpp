@@ -79,7 +79,7 @@ int main ()
     std::cout << "Result: " << result << std::endl;
     std::cout << "Duration: " << duration.count() << "ns" << std::endl;
     std::cout << "Operation Time: " << double(duration.count()) / double(COUNT) << "ns" << std::endl;
-    std::cout << "Time Per Byte: " << double(duration.count()) / double(20*COUNT) << "ns" << std::endl;
+    std::cout << "Time Per Byte: " << double(duration.count()) / (20.0*COUNT) << "ns" << std::endl;
 
     return 0;
 }
@@ -200,5 +200,5 @@ uint16_t sum_test (T& in)
     if (!write(in, out))
         exit(1);
 
-    return out.get();
+    return out.checksum();
 }

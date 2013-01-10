@@ -46,52 +46,63 @@ namespace framework
 
         /**
         * \headerfile big_endian.inl <framework/serializable/mutators/big_endian.hpp>
-        * \brief \c big_endian serialization.
+        * \brief Read overload.
+        *
+        * Reads a value of type T from an input stream using big endian byte ordering.
+        *
+        * \param in input stream
+        * \param out output value
         */
-        template <typename T>
-        struct serializable_specification <big_endian <T>>
+        template <
+            typename Input, 
+            typename Output, 
+            typename T>
+        bool dispatch_read (Input& in, Output& out, big_endian <T>*,
+            typename std::enable_if <
+                std::is_same <
+                    type_extractor <T>,
+                    Output
+                >::value,
+                void
+            >* = nullptr)
         {
-            private:
-                /**
-                * \brief Underlying value type definition.
-                */
-                using value_type = typename type_extractor <T>::type;
-                
-            public:
-                /**
-                * Reads a value of type T from the input stream using big endian
-                * byte ordering.
-                *
-                * \param in input stream
-                * \param out output value
-                */
-                template <typename Input>
-                static bool read (Input& in, value_type& out)
-                {
-                    value_type value;
-                    if (!serializable_specification <T>::read(in, value))
-                        return false;
+            using value_type = type_extractor <T>;
 
-                    out = big_endian_impl::to_host <value_type>::run(value);
-                    return true;
-                }
+            type_extractor <T> value;
+            if (!dispatch_read <T> (in, value))
+                return false;
 
-                /**
-                * Writes a value of type T to the output stream using big endian 
-                * byte ordering.
-                *
-                * \param in input stream
-                * \param out output value
-                */
-                template <typename Output>
-                static bool write (value_type const& in, Output& out)
-                {
-                    if (!serializable_specification <T>::write(big_endian_impl::from_host <value_type>::run(in), out))
-                        return false;
-                    
-                    return true;
-                }
-        };
+            out = big_endian_impl::to_host <decltype(value)>::run(value);
+            return true;
+        }
+
+        /**
+        * \headerfile big_endian.inl <framework/serializable/mutators/big_endian.hpp>
+        * \brief Write overload.
+        *
+        * Writes a value of type T to an output stream using big endian byte ordering.
+        *
+        * \param in input value
+        * \param out output stream
+        */
+        template <
+            typename Input, 
+            typename Output, 
+            typename T>
+        bool dispatch_write (Input const& in, Output& out, big_endian <T>*,
+            typename std::enable_if <
+                std::is_same <
+                    type_extractor <T>,
+                    Input
+                >::value,
+                void
+            >* = nullptr)
+        {
+            if (!dispatch_write <T> (big_endian_impl::from_host <type_extractor <T>>::run(in), out))
+                return false;
+
+            return true;
+        }
     }
 }
 

@@ -10,6 +10,8 @@
 #include <framework/serializable/mutators/little_endian.hpp>
 #include <framework/serializable/common_macros.hpp>
 
+// Note: FRAMEWORK_HOST_ENDIANNESS set to FRAMEWORK_LITTLE_ENDIAN for the purposes of these tests
+
 SUITE(framework_serializable_mutators_little_endian_hpp_2)
 {
     TEST(Basic)
@@ -50,6 +52,6 @@ SUITE(framework_serializable_mutators_little_endian_hpp_2)
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
+        CHECK(equal(in, out));
     }
 }

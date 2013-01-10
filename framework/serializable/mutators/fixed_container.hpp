@@ -34,52 +34,54 @@ namespace framework
         
         /**
         * \headerfile fixed_container.hpp <framework/serializable/mutators/fixed_contain.hpp>
-        * \brief \c fixed_container serialization.
+        * \brief Read overload.
+        * \param in input stream
+        * \param out output container
+        * \return true on success, false on failure
         */
-        template <typename Value, typename Container>
-        struct serializable_specification <fixed_container <Value, Container>>
+        template <
+            typename Input,
+            typename Output,
+            typename Value,
+            typename Container>
+        bool dispatch_read (Input& in, Output& out, fixed_container <Value, Container>*,
+            typename std::enable_if <
+                std::is_same <Output, Container>::value,
+                void
+            >* = nullptr)
         {
-            private:
-                using value_type = typename type_extractor <Value>::type;
+            Container result;
+            for (auto& x : result)
+                if (!dispatch_read <Value> (in, x))
+                    return false;
 
-            public:
-                /**
-                * Reads in the elements of \c out from the input stream using the specification
-                * given by \c Value.
-                *
-                * \param in input stream
-                * \param out output value
-                * \return true on success, false on failure
-                */
-                template <typename Input>
-                static bool read (Input& in, Container& out)
-                {
-                    Container result;
-                    for (auto& x : result)
-                        if (!serializable_specification <Value>::read(in, x))
-                            return false;
+            out = std::move(result);
+            return true;
+        }
 
-                    out = std::move(result);
-                    return true;
-                }
-    
-                /**
-                * Writes the elements of \c in to the output stream using the specification given 
-                * by \c Value.
-                *
-                * \param in input value
-                * \param out output stream
-                * \return true on success, false on failure
-                */
-                template <typename Output>
-                static bool write (Container const& in, Output& out)
-                {
-                    for (auto const& x : in)
-                        if (!serializable_specification <Value>::write(x, out))
-                            return false;
+        /**
+        * \headerfile fixed_container.hpp <framework/serializable/mutators/fixed_contain.hpp>
+        * \brief Write overload.
+        * \param in input container
+        * \param out output stream
+        * \return true on success, false on failure
+        */
+        template <
+            typename Input,
+            typename Output,
+            typename Value,
+            typename Container>
+        bool dispatch_write (Input const& in, Output& out, fixed_container <Value, Container>*,
+            typename std::enable_if <
+                std::is_same <Input, Container>::value,
+                void
+            >* = nullptr)
+        {
+            for (auto const& x : in)
+                if (!dispatch_write <Value> (x, out))
+                    return false;
 
-                    return true;
-                }
-        };
+            return true;
+        }
     }
 }

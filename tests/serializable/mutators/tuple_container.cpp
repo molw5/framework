@@ -38,8 +38,6 @@ SUITE(framework_serializable_mutators_tuple_container_hpp)
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
-        CHECK(in.get <NAME("Field 2")> () == out.get <NAME("Field 2")> ());
         CHECK(in == out);
     }
 }

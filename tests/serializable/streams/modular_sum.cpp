@@ -44,7 +44,7 @@ SUITE(framework_serializable_streams_modular_sum_hpp)
 
         test = (~test) & 0xFFFF;
 
-        CHECK(test == out.get());
+        CHECK(test == out.checksum());
     }
 
     TEST(LittleEndian)
@@ -76,6 +76,6 @@ SUITE(framework_serializable_streams_modular_sum_hpp)
 
         test = (~test) & 0xFFFF;
 
-        CHECK(test == out.get());
+        CHECK(test == out.checksum());
     }
 }

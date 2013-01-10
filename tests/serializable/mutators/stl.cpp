@@ -36,7 +36,6 @@ SUITE(framework_serializable_mutators_stl_hpp)
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
         CHECK(in == out);
     }
 
@@ -51,11 +50,10 @@ SUITE(framework_serializable_mutators_stl_hpp)
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
         CHECK(in == out);
     }
 
-    /**
+    /*
     TEST(forward_list)
     {
         using namespace framework::serializable;
@@ -68,8 +66,6 @@ SUITE(framework_serializable_mutators_stl_hpp)
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
         CHECK(in == out);
     }
     */
@@ -78,16 +74,13 @@ SUITE(framework_serializable_mutators_stl_hpp)
     {
         using namespace framework::serializable;
 
-        inline_object <value <NAME("Field 1"), stl_list <int, int>>> in, out;
+        inline_object <
+            value <NAME("Field 1"), stl_list <int, int>>
+        > out, in{std::forward_as_tuple(1, 2, 3)};
         
-        std::list <int> test {1, 2, 3};
-        in.set <NAME("Field 1")> (test);
-
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
         CHECK(in == out);
     }
 
@@ -95,16 +88,13 @@ SUITE(framework_serializable_mutators_stl_hpp)
     {
         using namespace framework::serializable;
 
-        inline_object <value <NAME("Field 1"), stl_multiset <int, int>>> in, out;
-
-        std::multiset <int> test {1, 1, 2, 3, 3, 3};
-        in.set <NAME("Field 1")> (test);
+        inline_object <
+            value <NAME("Field 1"), stl_multiset <int, int>>
+        > out, in{std::forward_as_tuple(1, 1, 2, 3, 3, 3)};
 
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
         CHECK(in == out);
     }
 
@@ -115,20 +105,11 @@ SUITE(framework_serializable_mutators_stl_hpp)
         inline_object <
             value <NAME("Field 1"), stl_map <int, int, int>>,
             value <NAME("Field 2"), stl_multimap <int, int, int>>
-        > in, out;
-
-        std::map <int, int> test1 {{1, 2}};
-        std::multimap <int, int> test2 {{1, 2}, {1, 3}, {2, 4}};
-        in.set <NAME("Field 1")> (test1);
-        in.set <NAME("Field 2")> (test2);
-
+        > out, in {std::map <int, int> {{1, 2}}, std::multimap <int, int> {{1, 2}, {1, 3}, {2, 4}}};
+            
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test1);
-        CHECK(in.get <NAME("Field 2")> () == test2);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
-        CHECK(in.get <NAME("Field 2")> () == out.get <NAME("Field 2")> ());
         CHECK(in == out);
     }
 
@@ -136,16 +117,13 @@ SUITE(framework_serializable_mutators_stl_hpp)
     {
         using namespace framework::serializable;
 
-        inline_object <value <NAME("Field 1"), stl_pair <int, int>>> in, out;
-
-        std::pair <int, int> test {1, 2};
-        in.set <NAME("Field 1")> (test);
+        inline_object <
+            value <NAME("Field 1"), stl_pair <int, int>>
+        > out, in {std::forward_as_tuple(1, 2)};
 
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
         CHECK(in == out);
     }
 
@@ -156,20 +134,12 @@ SUITE(framework_serializable_mutators_stl_hpp)
         inline_object <
             value <NAME("Field 1"), stl_set <int, int>>,
             value <NAME("Field 2"), stl_multiset <int, int>>
-        > in, out;
-
-        std::set <int> test1 {1, 2, 3};
-        std::multiset <int> test2 {1, 1, 2, 3, 3, 3};
-        in.set <NAME("Field 1")> (test1);
-        in.set <NAME("Field 2")> (test2);
+        > out, in {std::forward_as_tuple(1, 2, 3),
+                   std::forward_as_tuple(1, 1, 2, 3, 3, 3)};
 
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test1);
-        CHECK(in.get <NAME("Field 2")> () == test2);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
-        CHECK(in.get <NAME("Field 2")> () == out.get <NAME("Field 2")> ());
         CHECK(in == out);
     }
 
@@ -182,26 +152,14 @@ SUITE(framework_serializable_mutators_stl_hpp)
             value <NAME("Field 2"), stl_null_string>,
             value <NAME("Field 3"), stl_wstring <int>>,
             value <NAME("Field 4"), stl_null_wstring>
-        > in, out;
-
-        std::string test = "string";
-        std::wstring wtest = L"wstring";
-        in.set <NAME("Field 1")> (test);
-        in.set <NAME("Field 2")> (test);
-        in.set <NAME("Field 3")> (wtest);
-        in.set <NAME("Field 4")> (wtest);
+        > out, in {std::string("Hello World!"),
+                   std::string("Hello World!"),
+                   std::wstring(L"Wide Hello World!"),
+                   std::wstring(L"Wide Hello World!")};
 
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test);
-        CHECK(in.get <NAME("Field 2")> () == test);
-        CHECK(in.get <NAME("Field 3")> () == wtest);
-        CHECK(in.get <NAME("Field 4")> () == wtest);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
-        CHECK(in.get <NAME("Field 2")> () == out.get <NAME("Field 2")> ());
-        CHECK(in.get <NAME("Field 3")> () == out.get <NAME("Field 3")> ());
-        CHECK(in.get <NAME("Field 4")> () == out.get <NAME("Field 4")> ());
         CHECK(in == out);
     }
 
@@ -209,16 +167,13 @@ SUITE(framework_serializable_mutators_stl_hpp)
     {
         using namespace framework::serializable;
 
-        inline_object <value <NAME("Field 1"), stl_tuple <int, float, double>>> in, out;
+        inline_object <
+            value <NAME("Field 1"), stl_tuple <int, float, double>>
+        > out, in {std::forward_as_tuple(1, 2.0f, 3.0)};
         
-        std::tuple <int, float, double> test {1, 2.0f, 3.0};
-        in.set <NAME("Field 1")> (test);
-
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
         CHECK(in == out);
     }
 
@@ -229,20 +184,13 @@ SUITE(framework_serializable_mutators_stl_hpp)
         inline_object <
             value <NAME("Field 1"), stl_unordered_map <int, int, int>>,
             value <NAME("Field 2"), stl_unordered_multimap <int, int, int>>
-        > in, out;
-
-        std::unordered_map <int, int> test1 {{1, 2}};
-        std::unordered_multimap <int, int> test2 {{1, 2}, {1, 3}, {2, 4}};
-        in.set <NAME("Field 1")> (test1);
-        in.set <NAME("Field 2")> (test2);
+        > out, in {std::unordered_map <int, int> {{1, 2}},
+                   std::unordered_multimap <int, int> {{1, 2}, {1, 3}, {2, 4}}};
 
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test1);
-        CHECK(in.get <NAME("Field 2")> () == test2);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
-        CHECK(in.get <NAME("Field 2")> () == out.get <NAME("Field 2")> ());
+        CHECK(in == out);
     }
 
     TEST(unordered_set)
@@ -252,36 +200,26 @@ SUITE(framework_serializable_mutators_stl_hpp)
         inline_object <
             value <NAME("Field 1"), stl_unordered_set <int, int>>,
             value <NAME("Field 2"), stl_unordered_multiset <int, int>>
-        > in, out;
-
-        std::unordered_set <int> test1 {1, 2, 3};
-        std::unordered_multiset <int> test2 {1, 1, 2, 3, 3, 3};
-        in.set <NAME("Field 1")> (test1);
-        in.set <NAME("Field 2")> (test2);
+        > out, in {std::forward_as_tuple(1, 2, 3),
+                   std::forward_as_tuple(1, 1, 2, 3, 3, 3)};
 
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test1);
-        CHECK(in.get <NAME("Field 2")> () == test2);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
-        CHECK(in.get <NAME("Field 2")> () == out.get <NAME("Field 2")> ());
+        CHECK(in == out);
     }
 
     TEST(vector)
     {
         using namespace framework::serializable;
 
-        inline_object <value <NAME("Field 1"), stl_vector <int, int>>> in, out;
-
-        std::vector <int> test {1, 2, 3};
-        in.set <NAME("Field 1")> (test);
+        inline_object <
+            value <NAME("Field 1"), stl_vector <int, int>>
+        > out, in {std::forward_as_tuple(1, 2, 3)};
 
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
         CHECK(in == out);
     }
 
@@ -315,8 +253,6 @@ SUITE(framework_serializable_mutators_stl_hpp)
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == test);
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
         CHECK(in == out);
     }
 }

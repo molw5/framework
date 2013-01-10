@@ -44,43 +44,58 @@ namespace framework
 
         /**
         * \headerfile tuple_container.hpp <framework/serializable/mutators/tuple_container.hpp>
-        * \brief \c tuple_container serialization.
+        * \brief Read overload.
+        *
+        * Reads the container's elements from an input stream using the specification list \c Parameters.
+        *
+        * \param in input stream
+        * \param out output container
+        * \return true on success, false on failure
         */
-        template <typename... Parameters, typename Container>
-        struct serializable_specification <tuple_container <pack_container <Parameters...>, Container>>
+        template <
+            typename Input,
+            typename Output,
+            typename... Parameters,
+            typename Container>
+        bool dispatch_read (Input& in, Output& out, 
+            tuple_container <pack_container <Parameters...>, Container>*,
+            typename std::enable_if <
+                std::is_same <Output, Container>::value,
+                void
+            >::type* = nullptr)
         {
-            /**
-            * Reads in the container elements using the specification list \c Parameters.
-            *
-            * \param in input stream
-            * \param out output value
-            * \return true on success, false on failure
-            */
-            template <typename Input>
-            static bool read (Input& in, Container& out)
-            {
-                Container result;
-                if (!detail::tuple_container_impl <0, Parameters...>::read(in, result))
-                    return false;
+            Container result;
+            if (!detail::tuple_container_impl <0, Parameters...>::read(in, result))
+                return false;
 
-                out = std::move(result);
-                return true;
-            }
+            out = std::move(result);
+            return true;
+        }
 
-            /**
-            * Writes the container elements to an output stream using the specification 
-            * list \c Parameters.
-            *
-            * \param in input object
-            * \param out output stream
-            * \return true on success, false on failure
-            */
-            template <typename Output>
-            static bool write (Container const& in, Output& out)
-            {
-                return detail::tuple_container_impl <0, Parameters...>::write(in, out);
-            }
-        };
+        /**
+        * \headerfile tuple_container.hpp <framework/serializable/mutators/tuple_container.hpp>
+        * \brief Write overload.
+        *
+        * Wries the container's elements to an output stream using the specification list \c Parameters.
+        *
+        * \param in input container
+        * \param out output stream
+        * \return true on success, false on failure
+        */
+        template <
+            typename Input,
+            typename Output,
+            typename... Parameters,
+            typename Container>
+        bool dispatch_write (Input const& in, Output& out, 
+            tuple_container <pack_container <Parameters...>, Container>*,
+            typename std::enable_if <
+                std::is_same <Input, Container>::value,
+                void
+            >::type* = nullptr)
+        {
+            return detail::tuple_container_impl <0, Parameters...>::write(in, out);
+        }
     }
 }
 

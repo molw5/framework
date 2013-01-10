@@ -40,149 +40,147 @@ namespace framework
         {
         };
 
-        namespace detail
-        {
-            template <
-                typename Size, 
-                typename Value, 
-                typename Container, 
-                bool Continuous,
-                typename Enabler = void>
-            struct variable_container_optimizations
-            {
-                private:
-                    using size_type = typename type_extractor <Size>::type;
-                    using value_type = typename type_extractor <Value>::type;
-    
-                public:
-                    template <typename Input>
-                    static bool read (Input& in, Container& out)
-                    {
-                        size_type size;
-                        if (!serializable_specification <Size>::read(in, size))
-                            return false;
-        
-                        Container result;
-                        auto inserter = std::insert_iterator <Container> (result, result.begin());
-                        for (size_type i=0; i < size; ++i)
-                        {
-                            value_type x;
-                            if (!serializable_specification <Value>::read(in, x))
-                                return false;
-    
-                            inserter = std::move(x);
-                        }
-                        
-                        out = std::move(result);
-                        return true;
-                    }
-        
-                    template <typename Output>
-                    static bool write (Container const& in, Output& out)
-                    {
-                        size_type const& size = std::distance(in.begin(), in.end());
-                        if (!serializable_specification <Size>::write(size, out))
-                            return false;
-        
-                        for (auto const& x : in)
-                            if (!serializable_specification <Value>::write(x, out))
-                                return false;
-        
-                        return true;
-                    }
-            };
-
-            template <
-                typename Size, 
-                typename Value, 
-                typename Container>
-            struct variable_container_optimizations <
-                Size,
-                Value,
-                Container,
-                true,
-                typename std::enable_if <
-                    std::is_arithmetic <Value>::type,
-                    void
-                >::type>
-            {
-                private:
-                    using size_type = typename type_extractor <Size>::type;
-    
-                public:
-                    template <typename Input>
-                    static bool read (Input& in, Container& out)
-                    {
-                        size_type size;
-                        if (!serializable_specification <Size>::read(in, size))
-                            return false;
-        
-                        Container result;
-
-                        result.resize(size);
-                        if (!in.read(reinterpret_cast <char*> (std::addressof(result[0])), size*sizeof(result[0])))
-                            return false;
-
-                        out = std::move(result);
-                        return true;
-                    }
-        
-                    template <typename Output>
-                    static bool write (Container const& in, Output& out)
-                    {
-                        size_type const& size = std::distance(in.begin(), in.end());
-                        if (!serializable_specification <Size>::write(size, out))
-                            return false;
-        
-                        if (!out.write(reinterpret_cast <char const*> (std::addressof(in[0])), size*sizeof(in[0])))
-                            return false;
-
-                        return true;
-                    }
-            };
-        }
-
         /**
         * \headerfile variable_container.hpp <framework/serializable/mutators/variable_container.hpp>
-        * \brief \c variable_container serialization.
+        * \brief Read overload.
+        *
+        * Reads the container from an input stream as a size delimited list.
+        *
+        * \param in input stream
+        * \param out output container
+        * \return true on success, false on failure
         */
         template <
+            typename Input,
+            typename Output,
             typename Size, 
             typename Value, 
             typename Container,
             bool Continuous>
-        struct serializable_specification <variable_container <Size, Value, Container, Continuous>>
+        bool dispatch_read (Input& in, Output& out, 
+            variable_container <Size, Value, Container, Continuous>*,
+            typename std::enable_if <
+                std::is_same <Output, Container>::value,
+                void
+            >::type* = nullptr)
         {
-            private:
-                using size_type = typename type_extractor <Size>::type;
-                using value_type = typename type_extractor <Value>::type;
+            type_extractor <Size> size;
+            if (!dispatch_read <Size> (in, size))
+                return false;
 
-            public:
-                /**
-                * Reads the container as a size followed by size elements.
-                *
-                * \param in input stream
-                * \param out output value
-                * \return true on success, false on failure
-                */
-                template <typename Input>
-                static bool read (Input& in, Container& out)
-                {
-                    return detail::variable_container_optimizations <Size, Value, Container, Continuous>::read(in, out);
-                }
-    
-                /**
-                * Writes the container as a size followed by size elements.
-                *
-                * \param in input object
-                * \param out output stream
-                * \return true on success, false on failure
-                */
-                template <typename Output>
-                static bool write (Container const& in, Output& out)
-                {
-                    return detail::variable_container_optimizations <Size, Value, Container, Continuous>::write(in, out);
-                }
-        };
+            Container result;
+            auto inserter = std::insert_iterator <Container> (result, result.begin());
+            for (type_extractor <Size> i=0; i < size; ++i)
+            {
+                type_extractor <Value> x;
+                if (!dispatch_read <Value> (in, x))
+                    return false;
+
+                inserter = std::move(x);
+            }
+
+            out = std::move(result);
+            return true;
+        }
+
+        /**
+        * \headerfile variable_container.hpp <framework/serializable/mutators/variable_container.hpp>
+        * \brief Block write overload.
+        * \param in input stream
+        * \param out output container
+        * \return true on success, false on failure
+        */
+        template <
+            typename Input,
+            typename Output,
+            typename Size, 
+            typename Value, 
+            typename Container>
+        bool dispatch_write (Input const& in, Output& out, 
+            variable_container <Size, Value, Container, true>*,
+            typename std::enable_if <
+                std::is_same <Input, Container>::value &&
+                std::is_arithmetic <Value>::value,
+                void
+            >::type* = nullptr)
+        {
+            type_extractor <Size> const& size = std::distance(in.begin(), in.end());
+            if (!dispatch_write <Size> (size, out))
+                return false;
+
+            if (!out.write(reinterpret_cast <char const*> (&in[0]), sizeof(in[0])*in.size()))
+                return false;
+
+            return true;
+        }
+
+        /**
+        * \headerfile variable_container.hpp <framework/serializable/mutators/variable_container.hpp>
+        * \brief Block read overload.
+        * \param in input stream
+        * \param out output container
+        * \return true on success, false on failure
+        */
+        template <
+            typename Input,
+            typename Output,
+            typename Size, 
+            typename Value, 
+            typename Container,
+            bool Default>
+        bool dispatch_read (Input& in, Output& out, 
+            variable_container <Size, Value, Container, true>*,
+            typename std::enable_if <
+                std::is_same <Output, Container>::value &&
+                std::is_arithmetic <Value>::value,
+                void
+            >::type* = nullptr)
+        {
+            type_extractor <Size> size;
+            if (!dispatch_read <Size> (in, size))
+                return false;
+
+            Container result(size);
+            if (!in.read(reinterpret_cast <char*> (&result[0]), sizeof(result[0])*result.size()))
+                return false;
+
+            out = std::move(result);
+            return true;
+        }
+
+        /**
+        * \headerfile variable_container.hpp <framework/serializable/mutators/variable_container.hpp>
+        * \brief Write overload.
+        *
+        * Writes the container to an output stream as a size delimited list.
+        *
+        * \param in input stream
+        * \param out output container
+        * \return true on success, false on failure
+        */
+        template <
+            typename Input,
+            typename Output,
+            typename Size, 
+            typename Value, 
+            typename Container,
+            bool Default>
+        bool dispatch_write (Input const& in, Output& out, 
+            variable_container <Size, Value, Container, Default>*,
+            typename std::enable_if <
+                std::is_same <Input, Container>::value,
+                void
+            >::type* = nullptr)
+        {
+            type_extractor <Size> const& size = std::distance(in.begin(), in.end());
+            if (!dispatch_write <Size> (size, out))
+                return false;
+
+            for (auto const& x : in)
+                if (!dispatch_write <Value> (static_cast <type_extractor <Value> const&> (x), out))
+                    return false;
+
+            return true;
+        }
     }
 }

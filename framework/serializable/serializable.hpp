@@ -22,11 +22,20 @@ namespace framework
     {
         namespace detail
         {
-            template <typename Pack, template <typename> class Path>
-            struct extract_values_impl;
-            
             template <typename T, typename Enabler = void>
-            struct is_derived_type_impl;
+            struct is_object_type_impl;
+
+            template <typename T, typename Enabler = void>
+            struct is_object_default_serializable_impl;
+
+            template <typename T, typename Name>
+            struct object_base_impl;
+
+            template <typename T>
+            struct object_names_impl;
+
+            template <typename T, template <typename> class Path, typename Enabler = void>
+            struct extract_values_impl;
         }
 
         /**
@@ -35,9 +44,11 @@ namespace framework
         *
         * Implements the serializable object defined by the provided parameters.  Object layout
         * is defined by \c Inherited - each value type in this container is instantiated as
+        *
         * \code
         * typename get_value_implementation <T, Derived>::type
         * \endcode
+        *
         * and publicly inherited in the order they appear.
         * 
         * \tparam Derived derived class
@@ -51,7 +62,8 @@ namespace framework
             typename Specification,
             typename Inherited,
             typename Constructed,
-            typename Visible>
+            typename Visible,
+            bool Default = true>
 #ifndef DOXYGEN
         class serializable_implementation;
 #else
@@ -86,6 +98,44 @@ namespace framework
 
         /**
         * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
+        *
+        * Type trait testing whether or not T derives from \c serializable_implementation,
+        * equivalent to either std::true_type or std::false_type.
+        */
+        template <typename T>
+        using is_object_type = typename detail::is_object_type_impl <T>::type;
+
+        /**
+        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
+        *
+        * Type trait testing whether or not T is a default serializable 
+        * \c serializable_implementation, equivalent to either std::true_type or std::false_type.
+        */
+        template <typename T>
+        using is_object_default_serializable = typename detail::is_object_default_serializable_impl <T>::type;
+
+        /**
+        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
+        *
+        * Gets the base type associated with \c Name in \c T, storing the result in \c type.
+        *
+        * \pre is_derived_type <T>::value == true
+        */
+        template <typename T, typename Name>
+        using object_base = typename detail::object_base_impl <T, Name>::type;
+
+        /**
+        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
+        *
+        * Constructs a \c pack_container of every visible value name in \c T.
+        *
+        * \pre is_derived_type <T>::value == true
+        */
+        template <typename T>
+        using object_names = typename detail::object_names_impl <T>::type;
+
+        /**
+        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
         * \brief Extracts value types.
         *
         * Generates a \c pack_container of all value types accessible from \c T, using
@@ -114,21 +164,8 @@ namespace framework
         * \tparam T container type
         * \tparam Path path to follow through the tree
         */
-        template <
-            typename T,
-            template <typename> class Path,
-            typename Enabler = void>
-#ifndef DOXYGEN
-        struct extract_values;
-#else
-        struct extract_values
-        {
-            /**
-            * \brief Result.
-            */
-            typedef type;
-        };
-#endif
+        template <typename T, template <typename> class Path>
+        using extract_values = typename detail::extract_values_impl <T, Path>::type;
 
         /**
         * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
@@ -143,150 +180,9 @@ namespace framework
         using serializable = serializable_implementation <
             Derived, 
             alias <Specification...>,
-            typename extract_values <alias <Specification...>, get_container_specification>::type,
-            typename extract_values <alias <Specification...>, get_container_children>::type,
-            typename extract_values <alias <Specification...>, get_container_children>::type>;
-
-        /**
-        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
-        *
-        * Type trait testing whether or not T derives from \c serializable_implementation.
-        * Inherits std::true_type or std::false_type.
-        */
-        template <typename T>
-        struct is_derived_type : 
-            std::conditional <
-                detail::is_derived_type_impl <T>::value,
-                std::true_type,
-                std::false_type
-            >::type
-        {
-        };
-
-        /**
-        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
-        *
-        * Type trait testing whether or not T is a default serializable derived object type.
-        * Derives from std::true_type or std::false_type.
-        *
-        * \note 
-        * The following relationships always hold
-        * \code
-        * !is_default_derived_serializable <T>::value || is_derived_type <T>::value
-        * !is_default_derived_serializable <T>::value || is_default_serializable <T>::value
-        * \endcode
-        */
-        template <typename T>
-        struct is_default_derived_serializable :
-            std::conditional <
-                is_derived_type <T>::value,
-                std::true_type,
-                std::false_type
-            >::type
-        {
-        };
-
-        /**
-        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
-        *
-        * Required specialization of is_default_serializable.
-        */
-        template <typename T>
-        struct is_default_serializable <T,
-            typename std::enable_if <
-                is_default_derived_serializable <T>::value,
-                void
-            >::type> : std::true_type
-        {
-        };
-        
-        /**
-        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
-        * \brief Gets base type.
-        *
-        * Gets the base type associated with \c Name in \c T, storing the result in \c type.
-        *
-        * \pre is_derived_type <T>::value == true
-        */
-        template <typename T, typename Name>
-        struct get_base
-        {
-            private:
-                template <typename U>
-                using filter = std::is_same <typename U::first_type, Name>;
-
-            public:
-                /**
-                * \brief Result.
-                */
-                using type =
-                    typename std::enable_if <
-                        is_derived_type <T>::value,
-                        typename unique_filter_pack <
-                            typename T::serializable_derived_base_map,
-                            filter
-                        >::type::second_type
-                    >::type;
-        };
-
-        /**
-        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
-        * \brief Get visible names.
-        *
-        * Constructs a \c pack_container of every visible value name in \c T, storing the
-        * result in \c type.
-        *
-        * \pre is_derived_type <T>::value == true
-        */
-        template <typename T>
-        struct get_visible_names
-        {
-            /**
-            * \brief Result.
-            */
-            using type =
-                typename std::enable_if <
-                    is_derived_type <T>::value,
-                    typename T::serializable_derived_visible_names
-                >::type;
-        };
-
-        /**
-        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
-        * \brief Default \c derived type specification.
-        *
-        * Serializes a dervied container type using the \c Specification parameter provided
-        * to serializable_implementation.
-        */
-        template <typename T>
-        struct serializable_default_specification <T, 
-            typename std::enable_if <
-                is_default_derived_serializable <T>::value,
-                void
-            >::type>
-        {
-            /**
-            * \param in input stream
-            * \param out output object
-            * \return true on success, false on failure
-            */
-            template <typename Input, typename Output>
-            static bool read (Input& in, Output& out)
-            {
-                return serializable_specification <typename T::serializable_derived_specification>::read(in, out);
-            }
-            
-            /**
-            * \param in input object
-            * \param out output stream
-            * \return true on success, false on failure
-            */
-            template <typename Input, typename Output>
-            static bool write (Input const& in, Output& out)
-            {
-                return serializable_specification <typename T::serializable_derived_specification>::write(in, out);
-            }
-        };
+            extract_values <alias <Specification...>, container_specification>,
+            extract_values <alias <Specification...>, container_children>,
+            extract_values <alias <Specification...>, container_children>>;
     }
 }
 

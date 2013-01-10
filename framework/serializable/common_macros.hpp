@@ -30,13 +30,13 @@
         * Generates a unique typename from a string literal.
         */
         #define FRAMEWORK_SERIALIZABLE_NAME(s) \
-                typename framework::make_type_string <EXPAND_STRING_N(s, FRAMEWORK_SERIALIZABLE_NAME_LENGTH)>::type
+                ::framework::make_type_string <EXPAND_STRING_N(s, FRAMEWORK_SERIALIZABLE_NAME_LENGTH)>
     #else
         #error "FRAMEWORK_SERIALIZABLE_NAME macro already defined";
     #endif
 #else
     #define FRAMEWORK_SERIALIZABLE_NAME(s) \
-            typename framework::make_type_string <EXPAND_STRING(s)>::type
+            ::framework::make_type_string <EXPAND_STRING(s)>
 #endif
 
 /**
@@ -63,7 +63,7 @@
     */   
     #define DEFINE_BASE_TEMPLATE(derived) \
             template <typename T> \
-            using base = typename ::framework::serializable::get_base <derived, T>::type
+            using base = ::framework::serializable::object_base <derived, T>
 #else
     #error "DEFINE_BASE_TEMPLATE macro already defined";
 #endif

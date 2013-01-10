@@ -20,26 +20,24 @@ namespace framework
     {
         /**
         * Returns a reference to the implementation associated with \c Name in \c Object.  This
-        * method should be preferred over the get/set/... free functions in \c serializable_specification;
-        * implementations may need to protect necessary methods outside of \c serializable_specification or
-        * \c serializable_default_specification.
+        * method should be preferred over the get/set/... free functions when marshalling data;
+        * implementations may need to protect necessary methods.
         */
         template <typename Name, typename Object>
-        auto interface (Object& t) -> typename get_base <Object, Name>::type&
+        auto interface (Object& t) -> object_base <Object, Name>&
         {
-            return static_cast <typename get_base <Object, Name>::type&> (t);
+            return static_cast <object_base <Object, Name>&> (t);
         }
  
         /**
         * Returns a constant reference to the implementation associated with \c Name in \c Object.  This
-        * method should be preferred over the get/set/... free functions in \c serializable_specification;
-        * implementations may need to protect necessary methods outside of \c serializable_specification or
-        * \c serializable_default_specification.
+        * method should be preferred over the get/set/... free functions when marshalling data;
+        * implementations may need to protect necessary methods.
         */
         template <typename Name, typename Object>
-        auto interface (Object const& t) -> typename get_base <Object, Name>::type const&
+        auto interface (Object const& t) -> object_base <Object, Name> const&
         {
-            return static_cast <typename get_base <Object, Name>::type const&> (t);
+            return static_cast <object_base <Object, Name> const&> (t);
         }
     }
 }

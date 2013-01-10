@@ -7,49 +7,45 @@ namespace framework
 {
     namespace detail
     {
-        template <typename Value, template <typename> class Matcher, bool Result = Matcher <Value>::value>
-        struct filter_pack_impl;
-
-        template <typename Value, template <typename> class Matcher>
-        struct filter_pack_impl <Value, Matcher, false>
+        template <>
+        struct merge_packs_impl <>
         {
             using type = pack_container <>;
         };
 
-        template <typename Value, template <typename> class Matcher>
-        struct filter_pack_impl <Value, Matcher, true>
+        template <typename... LhsPack, typename... RhsPack>
+        struct merge_packs_impl <pack_container <LhsPack...>, pack_container <RhsPack...>>
         {
-            using type = pack_container <Value>;
+            using type = pack_container <LhsPack..., RhsPack...>;
         };
 
-        template <typename Result>
-        struct unique_filter_pack_impl <pack_container <Result>>
+        template <typename Head, typename... Tail>
+        struct merge_packs_impl <Head, Tail...>
         {
-            using type = Result;
+            using type = merge_packs <Head, merge_packs <Tail...>>;
+        };
+
+        template <typename T, template <typename> class Matcher>
+        struct filter_pack_impl
+        {
+            using type =
+                typename std::conditional <
+                    Matcher <T>::value,
+                    pack_container <T>,
+                    pack_container <>
+                >::type;
+        };
+
+        template <typename... Values, template <typename> class Matcher>
+        struct filter_pack_impl <pack_container <Values...>, Matcher>
+        {
+            using type = merge_packs <filter_pack <Values, Matcher>...>;
+        };
+
+        template <typename T>
+        struct unique_filter_pack_impl <pack_container <T>>
+        {
+            using type = T;
         };
     }
-
-    template <>
-    struct merge_packs <>
-    {
-        using type = pack_container <>;
-    };
-
-    template <typename... LhsPack, typename... RhsPack>
-    struct merge_packs <pack_container <LhsPack...>, pack_container <RhsPack...>>
-    {
-        using type = pack_container <LhsPack..., RhsPack...>;
-    };
-
-    template <typename Head, typename... Tail>
-    struct merge_packs <Head, Tail...>
-    {
-        using type = typename merge_packs <Head, typename merge_packs <Tail...>::type>::type;
-    };
-
-    template <typename... Values, template <typename> class Matcher>
-    struct filter_pack <pack_container <Values...>, Matcher>
-    {
-        using type = typename merge_packs <typename detail::filter_pack_impl <Values, Matcher>::type...>::type;
-    };
 }

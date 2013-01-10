@@ -28,8 +28,6 @@ namespace framework
         template <typename T1, typename T2>
         using stl_pair = tuple_container <
             pack_container <T1, T2>, 
-            std::pair <
-                typename type_extractor <T1>::type,
-                typename type_extractor <T2>::type>>;
+            std::pair <type_extractor <T1>, type_extractor <T2>>>;
     }
 }

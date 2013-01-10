@@ -17,7 +17,7 @@
 #include <string>
 
 #include <framework/serializable/mutators/variable_container.hpp>
-#include <framework/serializable/mutators/terminated.hpp>
+#include <framework/serializable/mutators/terminated_container.hpp>
 
 namespace framework
 {
@@ -32,7 +32,7 @@ namespace framework
         /**
         * \brief Common STL string specification, null terminated.
         */
-        using stl_null_string = terminated <char, '\0', std::string>;
+        using stl_null_string = terminated_container <char, '\0', std::string>;
 
         /**
         * \brief Common STL wstring specification.
@@ -55,7 +55,7 @@ namespace framework
         * would introduce an implicit constraints or unusual mutator syntax. If this default is
         * inadequate the \c stl_null_basic_string template should be used instead.
         */
-        using stl_null_wstring = terminated <little_endian <wchar_t>, L'\0', std::wstring>;
+        using stl_null_wstring = terminated_container <little_endian <wchar_t>, L'\0', std::wstring>;
 
         /**
         * \brief Common STL basic string specification.
@@ -63,23 +63,23 @@ namespace framework
         template <
             typename Size, 
             typename CharT,
-            typename Traits = std::char_traits <typename type_extractor <CharT>::type>,
-            typename Allocator = std::allocator <typename type_extractor <CharT>::type>>
+            typename Traits = std::char_traits <type_extractor <CharT>>,
+            typename Allocator = std::allocator <type_extractor <CharT>>>
         using stl_basic_string = variable_container <
             Size,
-            typename type_extractor <CharT>::type,
-            std::basic_string <typename type_extractor <CharT>::type, Traits, Allocator>>;
+            type_extractor <CharT>,
+            std::basic_string <type_extractor <CharT>, Traits, Allocator>>;
 
         /**
         * \brief Common STL basic string specification, null terminated.
         */
         template <
             typename CharT,
-            typename Traits = std::char_traits <typename type_extractor <CharT>::type>,
-            typename Allocator = std::allocator <typename type_extractor <CharT>::type>>
-        using stl_null_basic_string = terminated <
-            typename type_extractor <CharT>::type,
-            static_cast <typename type_extractor <CharT>::type> (0),
-            std::basic_string <typename type_extractor <CharT>::type, Traits, Allocator>>;
+            typename Traits = std::char_traits <type_extractor <CharT>>,
+            typename Allocator = std::allocator <type_extractor <CharT>>>
+        using stl_null_basic_string = terminated_container <
+            type_extractor <CharT>,
+            static_cast <type_extractor <CharT>> (0),
+            std::basic_string <type_extractor <CharT>, Traits, Allocator>>;
     }
 }

@@ -16,8 +16,8 @@ using ::framework::serializable::alias;
 using ::framework::serializable::value;
 using ::framework::serializable::serializable_implementation;
 using ::framework::serializable::extract_values;
-using ::framework::serializable::get_container_specification;
-using ::framework::serializable::get_container_children;
+using ::framework::serializable::container_specification;
+using ::framework::serializable::container_children;
 
 // Extracts the smallest element of a pack_container
 template <typename Args>
@@ -39,14 +39,8 @@ struct minimum <pack_container <Head, Tail...>>
     using remaining =
         typename std::conditional <
             smallest,
-            typename merge_packs <
-                pack_container <typename next::type>,
-                typename next::remaining
-            >::type,
-            typename merge_packs <
-                pack_container <Head>,
-                typename next::remaining
-            >::type
+            merge_packs <pack_container <typename next::type>, typename next::remaining>,
+            merge_packs <pack_container <Head>, typename next::remaining>
         >::type;
 };
 
@@ -62,11 +56,8 @@ template <typename Args>
 struct sort_by_size
 {
     using current = minimum <Args>;
-    using type =
-        typename merge_packs <
-            pack_container <typename current::type>,
-            typename sort_by_size <typename current::remaining>::type
-        >::type;
+    using type = merge_packs <pack_container <typename current::type>,
+            typename sort_by_size <typename current::remaining>::type>;
 };
 
 template <>
@@ -85,12 +76,12 @@ using packed_serializable = ::framework::serializable::serializable_implementati
     // The list of inherited types is sorted by size.  A better implementation could
     // solve the associated bin-packing problem.
     typename sort_by_size <
-        typename extract_values <alias <Specification...>, get_container_specification>::type
+        extract_values <alias <Specification...>, container_specification>
     >::type,
 
     // The constructed and visible types are unchanged
-    typename extract_values <alias <Specification...>, get_container_children>::type,
-    typename extract_values <alias <Specification...>, get_container_children>::type>;
+    extract_values <alias <Specification...>, container_children>,
+    extract_values <alias <Specification...>, container_children>>;
 
 template <typename... Types>
 class packed_object final : 

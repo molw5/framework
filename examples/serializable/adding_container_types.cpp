@@ -18,11 +18,7 @@ struct extract <I, pack_container <Head, Tail...>>
 {
     using next = extract <I-1, pack_container <Tail...>>;
     using type = typename next::type;
-    using remaining =
-        typename merge_packs <
-            pack_container <Head>,
-            typename next::remaining
-        >::type;
+    using remaining = merge_packs <pack_container <Head>, typename next::remaining>;
 };
 
 template <typename Head, typename... Tail>
@@ -39,13 +35,12 @@ struct randomize
 {
     using current = extract <Seed % Args::size, Args>;
     using type = 
-        typename merge_packs <
+        merge_packs <
             pack_container <typename current::type>,
             typename randomize <
                 static_cast <unsigned int> (1664525*Seed + 1013904223), 
                 typename current::remaining
-            >::type
-        >::type;
+            >::type>;
 };
 
 template <unsigned int Seed>

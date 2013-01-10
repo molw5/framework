@@ -8,17 +8,14 @@
 * Commonly used to forward processing to the default implementation:
 *
 * \code
-* template <typename... Specification>
-* struct serializable_specification <Wrapper <Specification...>>
+* template <typename Input, typename Output, typename... Specification>
+* bool read (Input& in, Output& out, Wrapper <Specification...>*)
 * {
-*     static bool read (Input& in, Output& out)
-*     {
-*         // wrapper implementation
-*         ...
+*     // wrapper implementation
+*     ...
 *
-*         // forward to the default serializer
-*         return serializable_specification <alias <Specification...>>::read(in, out);
-*     }
+*     // forward to the default serializer
+*     return read <alias <Specification>> (in, out);
 * }
 * \endcode
 *

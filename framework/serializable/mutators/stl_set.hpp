@@ -29,7 +29,7 @@ namespace framework
         using stl_set = variable_container <
             Size, 
             Value,
-            std::set <typename type_extractor <Value>::type>>;
+            std::set <type_extractor <Value>>>;
         
         /**
         * \brief Common STL multiset specification.
@@ -38,6 +38,6 @@ namespace framework
         using stl_multiset = variable_container <
             Size, 
             Value,
-            std::multiset <typename type_extractor <Value>::type>>;
+            std::multiset <type_extractor <Value>>>;
     }
 }

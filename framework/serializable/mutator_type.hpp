@@ -21,10 +21,13 @@ namespace framework
         namespace detail
         {
             template <typename T, typename Enabler = void>
-            struct type_extractor_impl;
-            
-            template <typename T, typename Enabler = void>
             struct is_mutator_type_impl;
+
+            template <typename T>
+            struct mutator_child_impl;
+
+            template <typename T, typename Enabler = void>
+            struct type_extractor_impl;
         }
 
         /**
@@ -34,10 +37,13 @@ namespace framework
         * interpret a mutator type.  Unlike \c container_type and \c value_type, this
         * base is not intended to interact with a derived object directly - rather,
         * a mutator type interacts with the underlying
+        *
         * \code
-        * typename type_extractor <T>::type
+        * type_extractor <T>
         * \endcode
+        *
         * type.  For example, during the serialization of the following object
+        *
         * \code
         * class Object : serializable <Object
         *   value <NAME("Field 1"), little_endian <uint32_t>>,
@@ -45,6 +51,7 @@ namespace framework
         * {
         * };
         * \endcode
+        *
         * \c serializable and \c value's readers both accept an output object of type
         * Object while \c little_endian and big_endian's readers accept an unsigned
         * integer and a float respectively.
@@ -56,49 +63,45 @@ namespace framework
         * \tparam Child wrapped child type
         */
         template <typename Child>
-#ifndef DOXYGEN
-        struct mutator_type;
-#else
         struct mutator_type
         {
-        };
+// GCC bug workaround - www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#580
+#if MAX_GNUC_VERSION(4, 8, 0)
+            public:
+#else
+            template <typename T, typename Enabler>
+            friend struct detail::is_mutator_type_impl;
+            
+            template <typename T>
+            friend struct detail::mutator_child_impl;
+
+            private:
 #endif
+                using serializable_mutator_type_enabler = void;
+                using mutator_child = Child;
+
+                mutator_type () = delete;
+                ~mutator_type () = delete;
+        };
 
         /**
-        * \headerfile mutator_type.hpp <framework/serializable/mutator_type.hpp>
+        * \headerfile container_type.hpp <framework/serializable/container_type.hpp>
         *
-        * Type trait testing whether or not T is a \c mutator_type.
-        * Inherits std::true_type or std::false_type.
+        * Type trait testing whether or not T is a \c container_type, equivalent to either
+        * std::true_type or std::false_type.
         */
         template <typename T>
-        struct is_mutator_type :
-            std::conditional <
-                detail::is_mutator_type_impl <T>::value,
-                std::true_type,
-                std::false_type
-            >::type
-        {
-        };
+        using is_mutator_type = typename detail::is_mutator_type_impl <T>::type;
 
         /**
         * \headerfile mutator_type.hpp <framework/serializable/mutator_type.hpp>
         *
-        * Retrieves a mutator's child type, storing the result in \c type.
+        * Retrieves a mutator's child type.
         *
         * \pre is_mutator_type <T>::value == true
         */
         template <typename T>
-        struct get_mutator_child
-        {
-            /**
-            * \brief Result.
-            */
-            using type =
-                typename std::enable_if <
-                    is_mutator_type <T>::value,
-                    typename T::mutator_child
-                >::type;
-        };
+        using mutator_child = typename detail::mutator_child_impl <T>::type;
 
         /**
         * \headerfile mutator_type.hpp <framework/serializable/mutator_type.hpp>
@@ -108,16 +111,10 @@ namespace framework
         * \code
         * typename type_extractor <typename get_mutator_child <T>::type>::type
         * \endcode
-        * if \T is a mutator type, as defined by \c is_mutator_type, and \c T otherwise.
+        * if \T is a mutator type, and \c T otherwise.
         */
         template <typename T>
-        struct type_extractor
-        {
-            /**
-            * \brief Result.
-            */
-            using type = typename detail::type_extractor_impl <T>::type;
-        };
+        using type_extractor = typename detail::type_extractor_impl <T>::type;
     }
 }
 

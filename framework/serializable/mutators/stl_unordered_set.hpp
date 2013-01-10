@@ -27,7 +27,7 @@ namespace framework
         using stl_unordered_set = variable_container <
             Size, 
             Value,
-            std::unordered_set <typename type_extractor <Value>::type>>;
+            std::unordered_set <type_extractor <Value>>>;
         
         /**
         * \brief Common STL multiset specification.
@@ -36,6 +36,6 @@ namespace framework
         using stl_unordered_multiset = variable_container <
             Size, 
             Value,
-            std::unordered_multiset <typename type_extractor <Value>::type>>;
+            std::unordered_multiset <type_extractor <Value>>>;
     }
 }

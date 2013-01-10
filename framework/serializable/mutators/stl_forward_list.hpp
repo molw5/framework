@@ -26,6 +26,6 @@ namespace framework
         * \brief Common STL forward list specification.
         */
         template <typename Size, typename Value>
-        using stl_forward_list = variable_container <Size, Value, std::forward_list <typename type_extractor <Value>::type>>;
+        using stl_forward_list = variable_container <Size, Value, std::forward_list <type_extractor <Value>>>;
     }
 }

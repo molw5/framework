@@ -22,12 +22,18 @@ namespace framework
         {
             template <typename T>
             struct recursive_serializable_specification;
-            
+        
             template <typename T, typename Enabler = void>
             struct is_container_type_impl;
 
             template <typename T, typename Enabler = void>
-            struct is_default_container_serializable_impl;
+            struct is_container_default_serializable_impl;
+
+            template <typename T>
+            struct container_specification_impl;
+
+            template <typename T>
+            struct container_children_impl;
         }
 
         /**
@@ -46,8 +52,8 @@ namespace framework
         * The default specification provided for this type processes each specification
         * in \c Specification's \c pack_container in the order it appears.  Derived types
         * may suppress this default by setting \c Default to false, forcing the
-        * generation of a compile time error if an appropriate \c serializable_specification
-        * specialization is not found.
+        * generation of a compile time error if an appropriate read or write overload
+        * is not present.
         *
         * \tparam Specification pack_container specifying the formal children of the container
         * \tparam Children pack_container specifying the logical children of the container
@@ -68,143 +74,88 @@ namespace framework
         /**
         * \headerfile container_type.hpp <framework/serializable/container_type.hpp>
         *
-        * Type trait testing whether or not T is a default serializable \c container_type.
-        * Derives from std::true_type or std::false_type.
-        *
-        * \note 
-        * The following relationships always hold
-        * \code
-        * !is_default_container_serializable <T>::value || is_container_type <T>::value
-        * !is_default_container_serializable <T>::value || is_default_serializable <T>::value
-        * \endcode
+        * Type trait testing whether or not T is a \c container_type, equivalent to either
+        * std::true_type or std::false_type.
         */
         template <typename T>
-        struct is_default_container_serializable :
-            std::conditional <
-                detail::is_default_container_serializable_impl <T>::value,
-                std::true_type,
-                std::false_type
-            >::type
-        {
-        };
-
-        /**
-        * \headerfile container_type.hpp <framework/container_type/container_type.hpp>
-        *
-        * Required specialization of is_default_serializable.
-        */
-        template <typename T>
-        struct is_default_serializable <T,
-            typename std::enable_if <
-                is_default_container_serializable <T>::value,
-                void
-            >::type> : std::true_type
-        {
-        };
-        
-        /**
-        * \headerfile container_type.hpp <framework/serializable/container_type.hpp>
-        *
-        * Type trait testing whether or not T is a \c container_type.
-        * Inherits std::true_type or std::false_type.
-        */
-        template <typename T>
-        struct is_container_type :
-            std::conditional <
-                detail::is_container_type_impl <T>::value,
-                std::true_type,
-                std::false_type
-            >::type
-        {
-        };
+        using is_container_type = typename detail::is_container_type_impl <T>::type;
 
         /**
         * \headerfile container_type.hpp <framework/serializable/container_type.hpp>
-        * \brief Get specification.
         *
-        * Retrieves a container type's specification, storing the result in \c type.
+        * Type trait testing whether or not T is a default serializable \c contaier_type,
+        * equivalent to either std::true_type or std::false_type.
+        */
+        template <typename T>
+        using is_container_default_serializable = typename detail::is_container_default_serializable_impl <T>::type;
+
+        /**
+        * \headerfile container_type.hpp <framework/serializable/container_type.hpp>
+        *
+        * Retrieves a container type's specification.
         *
         * \pre is_container_type <T>::value == true
         */
         template <typename T>
-        struct get_container_specification
-        {
-            /**
-            * \brief Result.
-            */
-            using type = 
-                typename std::enable_if <
-                    is_container_type <T>::value,
-                    typename T::container_specification
-                >::type;
-        };
+        using container_specification = typename detail::container_specification_impl <T>::type;
 
         /**
         * \headerfile container_type.hpp <framework/serializable/container_type.hpp>
-        * \brief Get children.
         *
-        * Retrieves a container type's children, storing the result in \c type.
+        * Retrieves a container type's children.
         *
         * \pre is_container_type <T>::value == true
         */
         template <typename T>
-        struct get_container_children
-        {
-            /**
-            * \brief Result.
-            */
-            using type = 
-                typename std::enable_if <
-                    is_container_type <T>::value,
-                    typename T::container_children
-                >::type;
-        };
+        using container_children = typename detail::container_children_impl <T>::type;
 
         /**
         * \headerfile container_type.hpp <framework/serializable/container_type.hpp>
-        * \brief Default \c container_type specification.
+        * \brief Default read overload.
         *
-        * Serializes each element of
-        * \code
-        * typename get_container_children <T>::type
-        * \endcode
-        * in the order it appears.
-        * 
-        * \note
-        * The methods provided here access the implementation's method directly though
-        * the reference provided by \c interface.
+        * Serializes each element of \c{container_children <Specification>} in the order it
+        * appears.
+        *
+        * \param in input stream
+        * \param out output container
+        * \return true on success, false on failure
         */
-        template <typename T>
-        struct serializable_default_specification <T,
-            typename std::enable_if <
-                is_default_container_serializable <T>::value,
-                void
-            >::type>
+        template <
+            typename Input,
+            typename Output,
+            typename Specification,
+            typename Children,
+            bool Default>
+        bool dispatch_read (Input& in, Output& out,
+            container_type <Specification, Children, Default>*,
+            typename std::enable_if <Default, void>::type* = nullptr)
         {
-            /**
-            * \param in input stream
-            * \param out output container
-            * \return true on success, false on failure
-            */
-            template <typename Input, typename Output>
-            static bool read (Input& in, Output& out)
-            {
-                return detail::recursive_serializable_specification <
-                    typename get_container_specification <T>::type>::read(in, out);
-            }
+            return detail::recursive_serializable_specification <Specification>::read(in, out);
+        }
 
-            /**
-            * \param in input container
-            * \param out output stream
-            * \return true on success, false on failure
-            */
-            template <typename Input, typename Output>
-            static bool write (Input const& in, Output& out)
-            {
-                return detail::recursive_serializable_specification <
-                    typename get_container_specification <T>::type>::write(in, out);
-            }
-        };
+        /**
+        * \headerfile container_type.hpp <framework/serializable/container_type.hpp>
+        * \brief Default write overload.
+        *
+        * Serializes each element of \c{container_children <Specification>} in the order it
+        * appears.
+        *
+        * \param in input container
+        * \param out output stream
+        * \return true on success, false on failure
+        */
+        template <
+            typename Input,
+            typename Output,
+            typename Specification,
+            typename Children,
+            bool Default>
+        bool dispatch_write (Input const& in, Output& out,
+            container_type <Specification, Children, Default>*,
+            typename std::enable_if <Default, void>::type* = nullptr)
+        {
+            return detail::recursive_serializable_specification <Specification>::write(in, out);
+        }
     }
 }
 

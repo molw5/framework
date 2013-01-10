@@ -5,21 +5,30 @@
 * \file
 * \brief Fundamental serializable definitions.
 *
-* Provides the fundamental structures extended by the remainder of this library to support specific 
-* types of serialization.  Serialization using this library is provided by the 
-* \c serializable_specification structure defined here:
+* Provides the fundamental serialization definitions extended by the remainder of this library to
+* support specific types of serialization.
+*
+* Provides the fundamental definitions extended by the remainder of this library to support specific
+* types of serialization.  Marshalling of data is performed using a collection of read/write method
+* overloads, invoked as follows:
+*
 * \code
-* serializable_specification <Specification>::read(in, out);
+* read <Specification> (in, out);
+* write <Specification> (in, out);
 * \endcode
-* or through one of the associated helpers:
+*
+* or through the following equivalent syntax:
+*
 * \code
-* read(in, out);
+* read(in, out, (Specification*)nullptr);
+* write(in, out, (Specification*)nullptr);
 * \endcode
-* It is important to note that the specification provided \c serializable_specification is used
+* 
+* It is important to note that the Specification provided to the above is used exclusively to define
 * exclusively to define how the object is to be serialized.  Specifically, there is no fundamental 
-* requirement that \c Specification match \c decltype(out) above or similar for \c read.  This 
-* allows code to alter how the serialization of a class takes place without altering it's definition - 
-* for example, the following is well defined:
+* requirement that \c Specification match the associated input or output object above  This allows
+* code to alter how the serialization of a class takes place without altering it's definition - for
+* example, the following is well defined:
 *
 * \code
 struct S1 : serializable <S1,
@@ -37,8 +46,8 @@ struct S2 : serializable <S2,
 } s2 {0, 0};
 
 std::stringstream ss;
-serializable_specification <S2>::write(s1, ss);
-serializable_specification <S2>::read(ss, s2);
+write <S2> (s1, ss);
+read <S2> (ss, s2);
 * \endcode
 *
 * More commonly the alias template may be used to define part of the object's specification for
@@ -56,9 +65,41 @@ struct S1 : serializable <S1, Header,
 {
 } s1 {1, 2.0f, 3.0, 4};
 
-checksum_stream chk;
-serializable_specification <Header>::write(s1, chk);
+internet_checksum chk;
+write <Header> (s1, chk);
 * \endcode
+*
+* Note that template partial specialization was originally used here to discriminate between types - 
+* this solution required great care in the placement of new definitions to avoid violating the one
+* definition rule.  This effectively eliminated what was seen as one of the stronger side effects
+* of this sort of serialization - the ability to incrementally improve marshalling functions based
+* on the profiled performance of an application.  For example, consider the following type:
+*
+* \code
+* ...
+* value <NAME("x"), stl_vector <little_endian <uint32_t>, little_endian <uint32_t>>>,
+* ...
+* \encode
+*
+* For a sufficiently large vector, "x" could conceivably dominate the serialization time in a
+* particular application as each data member is marshalled individually.  With tagged dispatch
+* the solution is trivial; add an overload:
+*
+* \code
+* template <typename Input, typename Output, typename Size>
+* bool dispatch_read (Input& in, Output& out, stl_vector <Size, little_endian <uint32_t>>*)
+* {
+*     // apply optimizations based on the endianness of the host
+*     ...
+* }
+* \endcode
+*
+* The above overload will now take precedence over the default stl_vector read definition in any
+* translation unit where we define the above; the two definitions may coexist within an application.  
+* Contrast this to template partial specialization where a solution similar to the above may still be 
+* used with the caveat that it \em must always take precedence to avoid violating the one definition
+* rule.  This produces highly fragile code and effectively eliminates this optimization path in 
+* practice.
 *
 * \copyright
 * Copyright &copy; 2012 iwg molw5<br>
@@ -79,242 +120,9 @@ namespace framework
             template <typename Input, std::size_t N, typename Enabler = void>
             struct read_count_exists_impl;
 
-            template <std::size_t N, typename Output, typename Enabler = void>
+            template <typename Output, std::size_t N, typename Enabler = void>
             struct write_count_exists_impl;
         }
-
-        /**
-        * \headerfile  base_types.hpp <framework/serializable/containers/base_types.hpp>
-        * \brief Default container serializer.
-        *
-        * Provides default base container type serializers.  The default base container
-        * serializers tests must be mutually exclusive - new base container types should wrap
-        * this test in a unique \c is_default_NAME_serializable trait.  In addition, an
-        * is_default_serializable override must be provided to disable the missing
-        * specification/fundamental type specializations provided here.
-        *
-        * Example: \c container_type enables it's specialization of this template only if
-        * \code
-        * is_default_container_serializable <T>::value == true
-        * \endcode
-        * and extends \c is_default_serializable so that
-        * \code
-        * !is_default_container_serializable <T>::value || is_default_serializable <T>::value
-        * \endcode
-        *
-        * \note
-        * No default is provided here; a missing \c serializable_default_specification announced
-        * by \c is_default_serializable will trigger an undefined template error.  The implementation
-        * below is provided for documentation purposes only.
-        *
-        * \tparam T container type
-        * \tparam Enabler specialization enabler
-        */
-        template <typename T, typename Enabler = void>
-#ifndef DOXYGEN
-        struct serializable_default_specification;
-#else
-        struct serializable_default_specification
-        {
-            /**
-            * Reads the output object from the input stream.  The value returned by this method
-            * must be boolean comparable.  Every \c serializable_default_specification must
-            * define a read method compatible with this signature to allow proper instantiation
-            * from \c serializable_specification's default implementation.
-            *
-            * \param in input stream
-            * \param out output object
-            * \return true on success, false on failure
-            */
-            template <typename Input, typename Output>
-            static bool read (Input& in, Output& out);
-
-            /**
-            * Writes the input object to the output stream.  The value returned by this method
-            * must be boolean comparable.  Every \c serializable_default_specification must
-            * define a write method compatible with this signature to allow proper instantiation
-            * from \c serializable_specification's default implementation.
-            *
-            * \param in input object
-            * \param out output stream
-            * \return true on success, false on failure
-            */
-            template <typename Input, typename Output>
-            static bool write (Input const& in, Output& out);
-        };
-#endif
-
-        /**
-        * \headerfile  base_types.hpp <framework/serializable/containers/base_types.hpp>
-        * \brief Serializable specification.
-        *
-        * Provides the underlying operations required to read/write serializable types.
-        * Container types are expected to partially specialize this this template to
-        * support additional container types.  Any such specializations are expected
-        * to expose a static read and write functions compatible with the definitions
-        * given below.
-        *
-        * This template allows for default handling of fundamental types, container types,
-        * value types, and derived types used to provide each with the most common generic 
-        * implementation.  See documentation in \c container_type, \c value_type, and 
-        * \c serializable_implementation for more information.
-        * 
-        * \tparam T container type
-        */
-        template <typename T>
-        struct serializable_specification
-        {
-            /**
-            * Performs the actual deserialization of a container type - specializations
-            * of serializable_specification are expected to provide a read method
-            * compatible with this definition.  The default implementation of this 
-            * compatible with this definition.  The implementation provided here forwards
-            *
-            * \param in input stream
-            * \param out output object
-            * \return true on success, false on failure
-            */
-            template <typename Input, typename Output>
-            static bool read (Input& in, Output& out)
-            {
-                return serializable_default_specification <T>::read(in, out);
-            }
-
-            /**
-            * Performs the actual serialization of a container type - specializations
-            * of serializable_specification are expected to provide a write method
-            * compatible with this definition.  The implementation provided here forwards
-            * the call to \c serializable_default_specification.
-            *
-            * \param in input object
-            * \param out output stream
-            * \return true on success, false on failure
-            */
-            template <typename Input, typename Output>
-            static bool write (Input const& in, Output& out)
-            {
-                return serializable_default_specification <T>::write(in, out);
-            }
-        };
-
-        /**
-        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
-        * \brief Read fowarder.
-        *
-        * Equivalent to
-        * \code
-        * serializable_specification <Output>::read(in, out)
-        * \endcode
-        */
-        template <typename Input, typename Output>
-        bool read (Input&& in, Output&& out)
-        {
-            using type = typename std::remove_const <typename std::remove_reference <Output>::type>::type;
-            return serializable_specification <type>::read(in, out);
-        }
-
-        /**
-        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
-        * \brief Write forwarder.
-        *
-        * Equivalent to
-        * \code
-        * serializable_specification <Input>::write(in, out)
-        * \endcode
-        */
-        template <typename Input, typename Output>
-        bool write (Input&& in, Output&& out)
-        {
-            using type = typename std::remove_const <typename std::remove_reference <Input>::type>::type;
-            return serializable_specification <type>::write(in, out);
-        }
-        
-        /**
-        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
-        * \brief Default serializable type trait.
-        *
-        * Provides a common default serializable check.  The specializations of this trait
-        * must be mutually exclusive - new base container types should wrap this test in a 
-        * unique \c is_default_NAME_serializable trait.
-        *
-        * Example: \c container_type enables it's specialization of this template only if
-        * \code
-        * is_default_container_serializable <T>::value == true
-        * \endcode
-        * extending \c is_default_serializable so that
-        * \code
-        * !is_default_container_serializable <T>::value || is_default_serializable <T>::value
-        * \endcode
-        *
-        * \param T container type
-        * \tparam Enabler specialization enabler
-        */
-        template <typename T, typename Enabler = void>
-        struct is_default_serializable : std::false_type
-        {
-        };
-
-#ifndef FRAMEWORK_SERIALIZABLE_NO_FUNDAMENTAL
-        /**
-        * \brief Default specification for fundamental types.
-        */
-        template <typename T>
-        struct serializable_default_specification <T,
-            typename std::enable_if <
-                !is_default_serializable <T>::value &&
-                std::is_fundamental <T>::value,
-                void
-            >::type>
-        {
-            /**
-            * Reads the output value as a raw stream of \c sizeof(out) bytes.  This method allows for the presence of
-            * a write override accepting the byte count as a template parameter.
-            */
-            template <typename Input>
-            static bool read (Input& in, T& out);
-
-            /**
-            * Reads the output value as a raw stream of \c sizeof(out) bytes.  This method allows the presence of a read
-            * override accepting the byte count as a template parameter.
-            */
-            template <typename Output>
-            static bool write (T const& in, Output& out);
-        };
-#endif
-        
-        /**
-        * \brief Default specialization for types missing a \em required specification.
-        */
-        template <typename T>
-        struct serializable_default_specification <T, 
-            typename std::enable_if <
-#ifndef FRAMEWORK_SERIALIZABLE_NO_FUNDAMENTAL
-                !std::is_fundamental <T>::value &&
-#endif
-                !is_default_serializable <T>::value,
-                void
-            >::type>
-        {
-            /**
-            * \brief Provides a compile time failure when instantiated.
-            */
-            template <typename Input, typename Output>
-            static bool read (Input&, Output&)
-            {
-                static_assert(!std::is_same <T, T>::value, "Missing serializable_specification definition");
-                return false; // suppress warnings
-            }
-
-            /**
-            * \brief Provides a compile time failure when instantiated.
-            */
-            template <typename Input, typename Output>
-            static bool write (Input&, Output&)
-            {
-                static_assert(!std::is_same <T, T>::value, "Missing serializable_specification definition");
-                return false; // suppress warnings
-            }
-        };
 
         /**
         * Determines if a read method is present in Input with a signature compatible with the following:
@@ -324,14 +132,7 @@ namespace framework
         * \endcode
         */
         template <typename Input, std::size_t N>
-        struct read_count_exists :
-            std::conditional <
-                detail::read_count_exists_impl <Input, N>::value,
-                std::true_type,
-                std::false_type
-            >::type
-        {
-        };
+        using read_count_exists = typename detail::read_count_exists_impl <Input, N>::type;
 
         /**
         * Determines if a write method is present in Output with a signature compatible with the following:
@@ -340,15 +141,120 @@ namespace framework
         * std::declval <Output> ().read <N> (std::declval <char const*> ())
         * \endcode
         */
-        template <std::size_t N, typename Output>
-        struct write_count_exists :
-            std::conditional <
-                detail::write_count_exists_impl <N, Output>::value,
-                std::true_type,
-                std::false_type
-            >::type
-        {
-        };
+        template <typename Output, std::size_t N>
+        using write_count_exists= typename detail::write_count_exists_impl <Output, N>::type;
+
+        /**
+        * \brief Arithmetic read overload.
+        */
+        template <typename Input, typename T>
+        bool custom_read (Input& in, T& out, 
+            typename std::enable_if <
+                std::is_arithmetic <T>::value &&
+                read_count_exists <Input, sizeof(T)>::value,
+                void
+            >::type* = nullptr);
+
+        /**
+        * \brief Arithmetic read overload.
+        */
+        template <typename Input, typename T>
+        bool custom_read (Input& in, T& out,
+            typename std::enable_if <
+                std::is_arithmetic <T>::value &&
+                !read_count_exists <Input, sizeof(T)>::value,
+                void
+            >::type* = nullptr);
+
+        /**
+        * \brief Arithmetic write overload.
+        */
+        template <typename Output, typename T>
+        bool custom_write (T const& in, Output& out,
+            typename std::enable_if <
+                std::is_arithmetic <T>::value &&
+                write_count_exists <Output, sizeof(T)>::value,
+                void
+            >::type* = nullptr);
+
+        /**
+        * \brief Arithmetic write overload.
+        */
+        template <typename Output, typename T>
+        bool custom_write (T const& in, Output& out,
+            typename std::enable_if <
+                std::is_arithmetic <T>::value &&
+                !write_count_exists <Output, sizeof(T)>::value,
+                void
+            >::type* = nullptr);
+
+        /**
+        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
+        * \brief Dispatched read forwarder.
+        *
+        * Uses the explicitly specified specification to serialize the object, equivalent to:
+        *
+        * \code
+        * dispatch_read(in, out, (Specification*)nullptr);
+        * \endcode
+        */
+        template <typename Specification, typename Input, typename Output>
+        bool dispatch_read (Input&& in, Output&& out);
+
+        /**
+        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
+        * \brief Dispatched write forwarder.
+        *
+        * Uses the explicitly specified specification to serialize the object, equivalent to:
+        *
+        * \code
+        * dispatch_write(in, out, (Specification*)nullptr);
+        * \endcode
+        */
+        template <typename Specification, typename Input, typename Output>
+        bool dispatch_write (Input&& in, Output&& out);
+
+        /**
+        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
+        * \brief Dispatched read terminator.
+        *
+        * Transfers control to an appropriate \c custom_read overload, if one exists.
+        */
+        template <typename Input, typename T>
+        bool dispatch_read (Input& in, T& out, T*,
+            decltype(custom_read(in, out), void())* = nullptr);
+
+        /**
+        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
+        * \brief Dispatched write terminator.
+        *
+        * Transfers control to an appropriate \c custom_write overload, if one exists.
+        */
+        template <typename Output, typename T>
+        bool dispatch_write (T const& in, Output& out, T*,
+            decltype(custom_write(in, out), void())* = nullptr);
+
+        /**
+        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
+        * \brief Read forwarder.
+        *
+        * Uses the output object's type as it's specification, generally equivalent to:
+        *
+        * \code
+        * read <decltype(out)> (in, out);
+        * \endcode
+        */
+        template <typename Input, typename Output>
+        bool read (Input&& in, Output&& out);
+
+        /**
+        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
+        * \brief Write forwarder.
+        *
+        * Uses the input object's type as it's specification.
+        */
+        template <typename Input, typename Output>
+        bool write (Input&& in, Output&& out);
     }
 }
 

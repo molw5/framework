@@ -30,9 +30,7 @@ namespace framework
         using stl_unordered_map = variable_container <
             Size, 
             stl_pair <T1, T2>, 
-            std::unordered_map <
-                typename type_extractor <T1>::type,
-                typename type_extractor <T2>::type>>;
+            std::unordered_map <type_extractor <T1>, type_extractor <T2>>>;
         
         /**
         * \brief Common STL multimap specification.
@@ -41,8 +39,6 @@ namespace framework
         using stl_unordered_multimap = variable_container <
             Size, 
             stl_pair <T1, T2>, 
-            std::unordered_multimap <
-                typename type_extractor <T1>::type,
-                typename type_extractor <T2>::type>>;
+            std::unordered_multimap <type_extractor <T1>, type_extractor <T2>>>;
     }
 }

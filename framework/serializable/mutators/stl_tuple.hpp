@@ -28,6 +28,6 @@ namespace framework
         template <typename... Types>
         using stl_tuple = tuple_container <
             pack_container <Types...>,
-            std::tuple <typename type_extractor <Types>::type...>>;
+            std::tuple <type_extractor <Types>...>>;
     }
 }

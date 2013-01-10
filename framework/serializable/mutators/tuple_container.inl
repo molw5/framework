@@ -32,7 +32,10 @@ namespace framework
                 template <typename Input, typename Output>
                 static bool read (Input& in, Output& out)
                 {
-                    if (!serializable_specification <Head>::read(in, std::get <Index> (out)))
+                    using ::std::get;
+                    using ::framework::serializable::dispatch_read;
+
+                    if (!dispatch_read <Head> (in, get <Index> (out)))
                         return false;
 
                     return tuple_container_impl <Index+1, Tail...>::read(in, out);
@@ -41,7 +44,10 @@ namespace framework
                 template <typename Input, typename Output>
                 static bool write (Input const& in, Output& out)
                 {
-                    if (!serializable_specification <Head>::write (std::get <Index> (in), out))
+                    using ::std::get;
+                    using ::framework::serializable::dispatch_write;
+
+                    if (!dispatch_write <Head> (get <Index> (in), out))
                         return false;
 
                     return tuple_container_impl <Index+1, Tail...>::write(in, out);

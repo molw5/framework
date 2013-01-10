@@ -16,7 +16,13 @@ namespace framework
 {
     namespace detail
     {
-        template <typename Values>
+        template <typename... Packs>
+        struct merge_packs_impl;
+
+        template <typename T, template <typename> class Macher>
+        struct filter_pack_impl;
+        
+        template <typename Pack>
         struct unique_filter_pack_impl;
     }
 
@@ -43,24 +49,14 @@ namespace framework
     * in \c Packs, in the order they appear.  For example, the following are equivalent:
     *
     * \code
-    * using results = typename merge_packs <pack_container <int, float>, pack_container <double>>::type;
+    * using results = merge_packs <pack_container <int, float>, pack_container <double>>;
     * using results = pack_container <int, float, double>;
     * \endcode
     *
     * \tparam Packs input \c pack_container types
     */
     template <typename... Packs>
-#ifndef DOXYGEN
-    struct merge_packs;
-#else
-    struct merge_packs
-    {
-        /**
-        * \brief Result.
-        */
-        typedef type;
-    };
-#endif
+    using merge_packs = typename detail::merge_packs_impl <Packs...>::type;
 
     /**
     * \headerfile pack_container.hpp <framework/common/containers/pack_container.hpp>
@@ -75,22 +71,12 @@ namespace framework
     * storing the result int \c type.  For example, the following are equivalent:
     *
     * \code
-    * using results = typename filter_pack <pack_container <int, float, short, double, int>, std::is_integral>::type;
+    * using results = filter_pack <pack_container <int, float, short, double, int>, std::is_integral>;
     * using results = pack_container <int, short, int>;
     * \endcode
     */
-    template <typename Pack, template <typename> class Macher>
-#ifndef DOXYGEN
-    struct filter_pack;
-#else
-    struct filter_pack
-    {
-        /**
-        * \brief Result.
-        */
-        typedef type;
-    }
-#endif
+    template <typename Pack, template <typename> class Matcher>
+    using filter_pack = typename detail::filter_pack_impl <Pack, Matcher>::type;
 
     /**
     * \headerfile pack_container.hpp <framework/common/containers/pack_container.hpp>
@@ -104,21 +90,12 @@ namespace framework
     * storing the result in \c type.  For example, the following are equivalent:
     *
     * \code
-    * using result = typename unique_filter_pack <pack_container <short, double, int, long>, std::is_floating_point>::type;
+    * using result = unique_filter_pack <pack_container <short, double, int, long>, std::is_floating_point>;
     * using result = double;
     * \endcode
     */
     template <typename Values, template <typename> class Matcher>
-    struct unique_filter_pack
-    {
-        /**
-        * \brief Result.
-        */
-        using type = 
-            typename detail::unique_filter_pack_impl <
-                typename filter_pack <Values, Matcher>::type
-            >::type;
-    };
+    using unique_filter_pack = typename detail::unique_filter_pack_impl <filter_pack <Values, Matcher>>::type;
 }
 
 #include <framework/common/containers/pack_container.inl>

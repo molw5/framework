@@ -7,45 +7,46 @@ namespace framework
 {
     namespace detail
     {
+        template <char... Array>
+        struct make_type_string_impl;
+
+        template <>
+        struct make_type_string_impl <>
+        {
+            static_assert(std::is_same <int, int>::value, "Input character array must be null terminated");
+        };
+
+        template <char... Tail>
+        struct make_type_string_impl <'\0', Tail...>
+        {
+            using type = type_string <>;
+        };
+
+        template <char Head, char... Tail>
+        struct make_type_string_impl <Head, Tail...>
+        {
+            using type = merge_strings <type_string <Head>, make_type_string <Tail...>>;
+        };
+
         template <typename... Strings>
-        struct merge_type_strings;
+        struct merge_strings_impl;
+
+        template <>
+        struct merge_strings_impl <>
+        {
+            using type = type_string <>;
+        };
 
         template <char... LhsString, char... RhsString>
-        struct merge_type_strings <type_string <LhsString...>, type_string <RhsString...>>
+        struct merge_strings_impl <type_string <LhsString...>, type_string <RhsString...>>
         {
             using type = type_string <LhsString..., RhsString...>;
         };
 
         template <typename Head, typename... Tail>
-        struct merge_type_strings <Head, Tail...>
+        struct merge_strings_impl <Head, Tail...>
         {
-            using type = 
-                typename merge_type_strings <
-                    Head, 
-                    typename merge_type_strings <Tail...>::type
-                >::type;
+            using type = merge_strings <Head, merge_strings <Tail...>>;
         };
     }
-
-    template <char Head, char... Tail>
-    struct make_type_string <Head, Tail...>
-    {
-        using type =
-            typename detail::merge_type_strings <
-                type_string <Head>,
-                typename make_type_string <Tail...>::type
-            >::type;
-    };
-
-    template <char... Tail>
-    struct make_type_string <'\0', Tail...>
-    {
-        using type = type_string <>;
-    };
-
-    template <>
-    struct make_type_string <>
-    {
-        static_assert(std::is_same <int, int>::value, "Input character array must be '\0' terminated");
-    };
 }

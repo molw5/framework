@@ -22,7 +22,7 @@ namespace framework
         * \headerfile stream_wrapper.hpp <framework/serializable/streams/stream_wrapper.hpp>
         * \brief Stream wrapper class.
         *
-        * Provides the overrides necessary to forward primitive read/write calls to an underlying stream.
+        * Provides the methods necessary to forward primitive read/write calls to an underlying stream.
         */
         template <typename Parent, typename Stream>
         class stream_wrapper : private std::reference_wrapper <Stream>
@@ -48,7 +48,7 @@ namespace framework
                 */
                 template <std::size_t N, typename... Args>
                 auto write (Args&&... args) ->
-                typename std::enable_if <write_count_exists <N, Stream>::value, bool>::type
+                typename std::enable_if <write_count_exists <Stream, N>::value, bool>::type
                 {
                     auto const parent_this = static_cast <Parent*> (this);
                     if (!parent_this->writepre(args...))

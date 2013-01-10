@@ -26,6 +26,6 @@ namespace framework
         * \brief Common STL list specification.
         */
         template <typename Size, typename Value>
-        using stl_list = variable_container <Size, Value, std::list <typename type_extractor <Value>::type>>;
+        using stl_list = variable_container <Size, Value, std::list <type_extractor <Value>>>;
     }
 }

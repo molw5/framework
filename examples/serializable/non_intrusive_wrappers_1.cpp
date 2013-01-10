@@ -12,6 +12,7 @@ using ::framework::serializable::value_type;
 using ::framework::serializable::alias;
 using ::framework::serializable::extract_values;
 using ::framework::serializable::little_endian;
+using ::framework::serializable::type_extractor;
 
 // First approach - non-intrusive specification is used for serialization only.
 
@@ -29,62 +30,55 @@ struct link : value_type <Type, Specification, link_implementation, false>
 #define LINK(Member) decltype(&Member), &Member
 
 // Implement the serialization of the 'link' data member
-namespace framework
+template <
+    typename Input,
+    typename Output,
+    typename Type,
+    Type Offset,
+    typename Specification>
+bool dispatch_read (Input& in, Output& out, link <Type, Offset, Specification>*)
 {
-    namespace serializable
-    {
-        template <typename Type, Type Offset, typename Specification>
-        struct serializable_specification <link <Type, Offset, Specification>>
-        {
-            template <typename Input, typename Output>
-            static bool read (Input& in, Output& out)
-            {
-                if (!serializable_specification <Specification>::read(in, out.*Offset))
-                    return false;
+    using ::framework::serializable::dispatch_read;
 
-                return true;
-            }
+    type_extractor <Specification> value;
+    if (!dispatch_read <Specification> (in, value))
+        return false;
 
-            template <typename Input, typename Output>
-            static bool write (Input const& in, Output& out)
-            {
-                if (!serializable_specification <Specification>::write(in.*Offset, out))
-                    return false;
+    out.*Offset = std::move(value);
+    return true;
+}
 
-                return true;
-            }
-        };
-    }
+template <
+    typename Input,
+    typename Output,
+    typename Type,
+    Type Offset,
+    typename Specification>
+bool dispatch_write (Input const& in, Output& out, link <Type, Offset, Specification>*)
+{
+    using ::framework::serializable::dispatch_write;
+
+    type_extractor <Specification> const& value = in.*Offset;
+    if (!dispatch_write <Specification> (value, out))
+        return false;
+
+    return true;
 }
 
 // Define a template used to bind a specification to a particular structure
 #define BIND(Specification, Structure) \
-namespace framework \
+template <typename Input> \
+bool custom_read (Input& in, Structure& out) \
 { \
-    namespace serializable \
-    { \
-        template <> \
-        struct serializable_specification <Structure> \
-        { \
-            template <typename Input> \
-            static bool read (Input& in, Structure& out) \
-            { \
-                if (!serializable_specification <Specification>::read(in, out)) \
-                    return false; \
+    using ::framework::serializable::dispatch_read; \
+    return dispatch_read <Specification> (in, out); \
+} \
 \
-                return true; \
-            } \
-\
-            template <typename Output> \
-            static bool write (Structure const& in, Output& out) \
-            { \
-                if (!serializable_specification <Specification>::write(in, out)) \
-                    return false; \
-\
-                return true; \
-            } \
-        }; \
-    } \
+template <typename Output> \
+bool custom_write (Structure const& in, Output& out) \
+{ \
+    using ::framework::serializable::dispatch_write; \
+    return dispatch_write <Specification> (in, out); \
 }
 
 // Usage example

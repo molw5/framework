@@ -44,7 +44,6 @@ namespace framework
     * using result = index_container <0, 1, 2>;
     * \endcode
     */
-    
     template <std::size_t Size>
     using make_indices = typename detail::make_indices_impl <Size>::type;
 }

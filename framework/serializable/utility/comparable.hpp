@@ -49,8 +49,8 @@ namespace framework
         bool less (LhsType const& lhs, RhsType const& rhs)
         {
             return detail::compare <
-                    typename get_visible_names <LhsType>::type,
-                    typename get_visible_names <RhsType>::type
+                    object_names <LhsType>,
+                    object_names <RhsType>
                 >::less(lhs, rhs);
         }
 
@@ -61,8 +61,8 @@ namespace framework
         bool greater (LhsType const& lhs, RhsType const& rhs)
         {
             return detail::compare <
-                    typename get_visible_names <LhsType>::type,
-                    typename get_visible_names <RhsType>::type
+                    object_names <LhsType>,
+                    object_names <RhsType>
                 >::greater(lhs, rhs);
         }
 
@@ -73,8 +73,8 @@ namespace framework
         bool less_or_equal (LhsType const& lhs, RhsType const& rhs)
         {
             return detail::compare <
-                    typename get_visible_names <LhsType>::type,
-                    typename get_visible_names <RhsType>::type
+                    object_names <LhsType>,
+                    object_names <RhsType>
                 >::less_or_equal(lhs, rhs);
         }
 
@@ -85,8 +85,8 @@ namespace framework
         bool greater_or_equal (LhsType const& lhs, RhsType const& rhs)
         {
             return detail::compare <
-                    typename get_visible_names <LhsType>::type,
-                    typename get_visible_names <RhsType>::type
+                    object_names <LhsType>,
+                    object_names <RhsType>
                 >::greater_or_equal(lhs, rhs);
         }
 
@@ -97,8 +97,8 @@ namespace framework
         bool equal (LhsType const& lhs, RhsType const& rhs)
         {
             return detail::compare <
-                    typename get_visible_names <LhsType>::type,
-                    typename get_visible_names <RhsType>::type
+                    object_names <LhsType>,
+                    object_names <RhsType>
                 >::equal(lhs, rhs);
         }
         
@@ -109,8 +109,8 @@ namespace framework
         bool not_equal (LhsType const& lhs, RhsType const& rhs)
         {
             return detail::compare <
-                    typename get_visible_names <LhsType>::type,
-                    typename get_visible_names <RhsType>::type
+                    object_names <LhsType>,
+                    object_names <RhsType>
                 >::not_equal(lhs, rhs);
         }
 

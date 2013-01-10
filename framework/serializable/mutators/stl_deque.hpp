@@ -26,6 +26,6 @@ namespace framework
         * \brief Common STL deque specification.
         */
         template <typename Size, typename Value>
-        using stl_deque = variable_container <Size, Value, std::deque <typename type_extractor <Value>::type>>;
+        using stl_deque = variable_container <Size, Value, std::deque <type_extractor <Value>>>;
     }
 }

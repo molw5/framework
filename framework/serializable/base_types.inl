@@ -8,8 +8,9 @@ namespace framework
         namespace detail
         {
             template <typename Input, std::size_t N, typename Enabler>
-            struct read_count_exists_impl : std::false_type
+            struct read_count_exists_impl
             {
+                using type = std::false_type;
             };
 
             template <typename Input, std::size_t N>
@@ -17,99 +18,122 @@ namespace framework
                 decltype(
                     std::declval <Input> ().template read <N> (std::declval <char*> ()), 
                     void()
-                )> : std::true_type
+                )>
             {
+                using type = std::true_type;
             };
 
-            template <std::size_t N, typename Output, typename Enabler>
-            struct write_count_exists_impl : std::false_type
+            template <typename Output, std::size_t N, typename Enabler>
+            struct write_count_exists_impl
             {
+                using type = std::false_type;
             };
 
-            template <std::size_t N, typename Output>
-            struct write_count_exists_impl <N, Output, 
+            template <typename Output, std::size_t N>
+            struct write_count_exists_impl <Output, N, 
                 decltype(
                     std::declval <Output> ().template write <N> (std::declval <char const*> ()), 
                     void()
-                )> : std::true_type
+                )> 
             {
+                using type = std::true_type;
             };
-
-#ifndef FRAMEWORK_SERIALIZABLE_NO_FUNDAMENTAL
-            template <typename Input, typename Output>
-            typename std::enable_if <
-                read_count_exists <Input, sizeof(Output)>::value,
-                bool
-            >::type read (Input& in, Output& out)
-            {
-                if (!in.template read <sizeof(Output)> (reinterpret_cast <char*> (&out)))
-                    return false;
-
-                return true;
-            }
-            
-            template <typename Input, typename Output>
-            typename std::enable_if <
-                !read_count_exists <Input, sizeof(Output)>::value,
-                bool
-            >::type read (Input& in, Output& out)
-            {
-                if (!in.read(reinterpret_cast <char*> (&out), sizeof(Output)))
-                    return false;
-
-                return true;
-            }
-
-            template <typename Input, typename Output>
-            typename std::enable_if <
-                write_count_exists <sizeof(Input), Output>::value,
-                bool
-            >::type write (Input const& in, Output& out)
-            {
-                if (!out.template write <sizeof(Input)> (reinterpret_cast <char const*> (&in)))
-                    return false;
-
-                return true;
-            }
-            
-            template <typename Input, typename Output>
-            typename std::enable_if <
-                !write_count_exists <sizeof(Input), Output>::value,
-                bool
-            >::type write (Input const& in, Output& out)
-            {
-                if (!out.write(reinterpret_cast <char const*> (&in), sizeof(Input)))
-                    return false;
-
-                return true;
-            }
         }
 
-        template <typename T>
-        template <typename Input>
-        bool serializable_default_specification <T,
-            typename std::enable_if <
-                !is_default_serializable <T>::value &&
-                std::is_fundamental <T>::value,
-                void
-            >::type
-        >::read (Input& in, T& out)
+        template <typename Specification, typename Input, typename Output>
+        bool dispatch_read (Input&& in, Output&& out)
         {
-            return detail::read(in, out);
+            return dispatch_read(in, out, (Specification*)nullptr);
         }
 
-        template <typename T>
-        template <typename Output>
-        bool serializable_default_specification <T,
-            typename std::enable_if <
-                !is_default_serializable <T>::value &&
-                std::is_fundamental <T>::value,
-                void
-            >::type
-        >::write (T const& in, Output& out)
+        template <typename Specification, typename Input, typename Output>
+        bool dispatch_write (Input&& in, Output&& out)
         {
-            return detail::write(in, out);
+            return dispatch_write(in, out, (Specification*)nullptr);
         }
-#endif
+
+        template <typename Input, typename T>
+        bool dispatch_read (Input& in, T& out, T*,
+            decltype(custom_read(in, out), void())*)
+        {
+            return custom_read(in, out);
+        }
+
+        template <typename Output, typename T>
+        bool dispatch_write (T const& in, Output& out, T*,
+            decltype(custom_write(in, out), void())*)
+        {
+            return custom_write(in, out);
+        }
+
+        template <typename Input, typename Output>
+        bool read (Input&& in, Output&& out)
+        {
+            using type = typename std::remove_cv <typename std::remove_reference <Output>::type>::type;
+            return dispatch_read <type> (in, out);
+        }
+
+        template <typename Input, typename Output>
+        bool write (Input&& in, Output&& out)
+        {
+            using type = typename std::remove_cv <typename std::remove_reference <Input>::type>::type;
+            return dispatch_write <type> (in, out);
+        }
+        
+        template <typename Input, typename T>
+        bool custom_read (Input& in, T& out, 
+            typename std::enable_if <
+                std::is_arithmetic <T>::value &&
+                read_count_exists <Input, sizeof(T)>::value,
+                void
+            >::type*)
+        {
+            if (!in.template read <sizeof(T)> (reinterpret_cast <char*> (&out)))
+                return false;
+
+            return true;
+        }
+
+        template <typename Input, typename T>
+        bool custom_read (Input& in, T& out,
+            typename std::enable_if <
+                std::is_arithmetic <T>::value &&
+                !read_count_exists <Input, sizeof(T)>::value,
+                void
+            >::type*)
+        {
+            if (!in.read(reinterpret_cast <char*> (&out), sizeof(out)))
+                return false;
+
+            return true;
+        }
+
+        template <typename Output, typename T>
+        bool custom_write (T const& in, Output& out, 
+            typename std::enable_if <
+                std::is_arithmetic <T>::value &&
+                write_count_exists <Output, sizeof(T)>::value,
+                void
+            >::type*)
+        {
+            if (!out.template write <sizeof(in)> (reinterpret_cast <char const*> (&in)))
+                return false;
+
+            return true;
+        }
+
+        template <typename Output, typename T>
+        bool custom_write (T const& in, Output& out, 
+            typename std::enable_if <
+                std::is_arithmetic <T>::value &&
+                !write_count_exists <Output, sizeof(T)>::value,
+                void
+            >::type*)
+        {
+            if (!out.write(reinterpret_cast <char const*> (&in), sizeof(in)))
+                return false;
+
+            return true;
+        }
     }
 }

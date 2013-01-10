@@ -20,7 +20,7 @@ SUITE(framework_serializable_mutators_variable_container_hpp)
 
         std::string buffer;
         for (int i=0; i < 100; ++i)
-            buffer.push_back(std::rand() % 0xFF);
+            buffer.push_back((char)i);
 
         inline_object <
             value <NAME("Field 1"), variable_container <big_endian <uint32_t>, char, std::string>>
@@ -29,7 +29,6 @@ SUITE(framework_serializable_mutators_variable_container_hpp)
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
         CHECK(in == out);
     }
 }

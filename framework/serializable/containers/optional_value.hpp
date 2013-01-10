@@ -160,57 +160,62 @@ namespace framework
 
         /**
         * \headerfile optional_value.hpp <framework/serializable/containers/optional_value.hpp>
-        * \brief Optional value serialization.
+        * \brief Read overload.
+        *
+        * Conditionally reads the underlying value.
+        *
+        * \param in input stream
+        * \param out output object
+        * \return true on success, false on failure
         */
         template <
+            typename Input,
+            typename Output,
             int64_t Flag,
             typename Name,
             typename Specification,
             template <typename> class Implementation>
-        struct serializable_specification <optional_value <
-            Flag,
-            Name,
-            Specification,
-            Implementation>>
+        bool dispatch_read (Input& in, Output& out, optional_value <Flag, Name, Specification, Implementation>*)
         {
-            private:
-                using value_alias = value_type <Name, Specification, Implementation>;
+            using value_alias = value_type <Name, Specification, Implementation>;
 
-            public:
-                /**
-                * \brief Conditionally read value.
-                * \param in input stream
-                * \param out output object
-                * \return true on success, false on failure
-                */
-                template <typename Input, typename Output>
-                static bool read (Input& in, Output& out)
-                {
-                    if (!in.checkFlag(Flag))
-                        interface <Name> (out).clear();
-                    else if (!serializable_specification <value_alias>::read(in, out))
-                        return false;
-                    
-                    return true;
-                }
-    
-                /**
-                * \brief Conditionally write value.
-                * \param in input object
-                * \param out output stream
-                * \return true on success, false on failure
-                */
-                template <typename Input, typename Output>
-                static bool write (Input const& in, Output& out)
-                {
-                    if (!interface <Name> (in).check())
-                        return true;
-                    if (!serializable_specification <value_alias>::write(in, out))
-                        return false;
+            if (!in.checkFlag(Flag))
+                interface <Name> (out).clear();
+            else if (!dispatch_read <value_alias> (in, out))
+                return false;
 
-                    out.setFlag(Flag);
-                    return true;
-                }
-        };
+            return true;
+        }
+
+        /**
+        * \headerfile optional_value.hpp <framework/serializable/containers/optional_value.hpp>
+        * \brief Write overload.
+        *
+        * Conditionally writes the underlying value.
+        *
+        * \param in input stream
+        * \param out output object
+        * \return true on success, false on failure
+        */
+        template <
+            typename Input,
+            typename Output,
+            int64_t Flag,
+            typename Name,
+            typename Specification,
+            template <typename> class Implementation>
+        bool dispatch_write (Input const& in, Output& out, optional_value <Flag, Name, Specification, Implementation>*)
+        {
+            using value_alias = value_type <Name, Specification, Implementation>;
+
+            if (!interface <Name> (in).check())
+                return true;
+
+            if (!dispatch_write <value_alias> (in, out))
+                return false;
+
+            out.setFlag(Flag);
+            return true;
+        }
     }
 }

@@ -18,55 +18,41 @@ struct buffer : mutator_type <
 {
 };
 
-// Define the serialization of the vector mutator - must be placed within serializable's namespace
-namespace framework
+// Read overload
+template <typename Input, typename SizeType>
+bool dispatch_read (Input& in, type_extractor <buffer <SizeType>>& out, buffer <SizeType>*)
 {
-    namespace serializable
-    {
-        // Note - the specialization uses the same syntax provided to mutator_type's specification parameter
-        template <typename SizeType>
-        struct serializable_specification <buffer <SizeType>>
-        {
-            private:
-                // Define the types used by this mutator
-                // Note: type_extractor is used here to define the underlying type of a specification.
-                using value_type = typename type_extractor <buffer <SizeType>>::type;
-                using size_type = typename type_extractor <SizeType>::type;
+    using ::framework::serializable::dispatch_read;
+
+    // Read the buffer's size
+    type_extractor <SizeType> size;
+    if (!dispatch_read <SizeType> (in, size))
+        return false;
+
+    // Read the buffer's data
+    out.resize(size);
+    if (!in.read(reinterpret_cast <char*> (&out[0]), out.size()))
+        return false;
+
+    return true;
+}
         
-            public:
-                // Read definition - note that the output type is restricted to the expected type here
-                template <typename Input>
-                static bool read (Input& in, value_type& out)
-                {
-                    // Read the buffer's size
-                    size_type size;
-                    if (!serializable_specification <SizeType>::read(in, size))
-                        return false;
-        
-                    // Read the buffer's data
-                    out.resize(size);
-                    if (!in.read(reinterpret_cast <char*> (&out[0]), out.size()))
-                        return false;
-        
-                    return true;
-                }
-        
-                // Write definition - note that the input type is restricted to the expected type here
-                template <typename Output>
-                static bool write (value_type const& in, Output& out)
-                {
-                    // Write the buffer's size
-                    if (!serializable_specification <SizeType>::write(in.size(), out))
-                        return false;
-        
-                    // Write the buffer's data
-                    if (!out.write(reinterpret_cast <char const*> (&in[0]), in.size()))
-                        return false;
-        
-                    return true;
-                }
-        };
-    }
+// Write overload
+template <typename Output, typename SizeType>
+bool dispatch_write (type_extractor <buffer <SizeType>> const& in, Output& out, buffer <SizeType>*)
+{
+    using ::framework::serializable::dispatch_write;
+
+    // Write the buffer's size
+    type_extractor <SizeType> const& size = in.size();
+    if (!dispatch_write <SizeType> (size, out))
+        return false;
+
+    // Write the buffer's data
+    if (!out.write(reinterpret_cast <char const*> (&in[0]), in.size()))
+        return false;
+
+    return true;
 }
 
 int main ()

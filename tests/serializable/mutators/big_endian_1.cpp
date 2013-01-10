@@ -10,6 +10,8 @@
 #include <framework/serializable/mutators/big_endian.hpp>
 #include <framework/serializable/common_macros.hpp>
 
+// Note: FRAMEWORK_HOST_ENDIANNESS set to FRAMEWORK_BIG_ENDIAN for the purposes of these tests
+
 SUITE(framework_serializable_mutators_big_endian_hpp_1)
 {
     TEST(Basic)
@@ -29,25 +31,6 @@ SUITE(framework_serializable_mutators_big_endian_hpp_1)
         std::stringstream ss;
         CHECK(write(in, ss));
         CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
-        CHECK(in.get <NAME("Field 2")> () == out.get <NAME("Field 2")> ());
-    }
-
-    TEST(Nested)
-    {
-        using namespace framework::serializable;
-
-        inline_object <
-            value <NAME("Field 1"), big_endian <big_endian <uint16_t>>>
-        > in {0x0102};
-
-        inline_object <
-            value <NAME("Field 1"), uint16_t>
-        > out;
-
-        std::stringstream ss;
-        CHECK(write(in, ss));
-        CHECK(read(ss, out));
-        CHECK(in.get <NAME("Field 1")> () == out.get <NAME("Field 1")> ());
+        CHECK(equal(in, out));
     }
 }

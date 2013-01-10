@@ -14,8 +14,17 @@
 
 namespace framework
 {
+    namespace detail
+    {
+        template <char... Array>
+        struct make_type_string_impl;
+
+        template <typename... Strings>
+        struct merge_strings_impl;
+    }
+
     /**
-    * \struct type_string type_string.hpp <framework/common/containers/type_string.hpp>
+    * \headerfile type_string.hpp <framework/common/containers/type_string.hpp>
     * \brief Type string.
     *
     * Provides a simple wrapper around a sequence of characters.
@@ -30,29 +39,26 @@ namespace framework
     };
 
     /**
-    * \struct make_type_string type_string.hpp <framework/common/containers/type_string.hpp>
+    * \headerfile type_string.hpp <framework/common/containers/type_string.hpp>
     * \brief Make type string.
     *
     * Constructs a type string from a \c '\0' terminated sequence of input characters,
     * providing a reduced type string in \c type.  The following are equivalent:
     *
     * \code
-    * using result = typename make_type_string <'H', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '!', '\0', '\0'>::type;
+    * using result = make_type_string <'H', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '!', '\0', '\0'>;
     * using result = type_string <'H', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '!'>;
     * \endcode
     */
     template <char... Array>
-#ifndef DOXYGEN
-    struct make_type_string;
-#else
-    struct make_type_string
-    {
-        /**
-        * \brief Result.
-        */
-        typedef type;
-    };
-#endif
+    using make_type_string = typename detail::make_type_string_impl <Array...>::type;
+
+    /**
+    * \headerfile type_string.hpp <framework/common/containers/type_string.hpp>
+    * \brief Merge type strings.
+    */
+    template <typename... Strings>
+    using merge_strings = typename detail::merge_strings_impl <Strings...>::type;
 }
 
 #include <framework/common/containers/type_string.inl>

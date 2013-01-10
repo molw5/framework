@@ -52,7 +52,7 @@ namespace framework
                 /**
                 * \brief Value type.
                 */
-                using value_type = typename type_extractor <Specification>::type;
+                using value_type = type_extractor <Specification>;
 
                 /**
                 * \brief Value specification.
@@ -88,7 +88,7 @@ namespace framework
         * \tparam T instantiation template definitions
         */
         template <typename T>
-        struct value_implementation
+        struct default_value
         {
             private:
                 /**
@@ -117,12 +117,12 @@ namespace framework
                 /**
                 * \brief Default destructor.
                 */
-                ~value_implementation () = default;
+                ~default_value () = default;
 
                 /**
                 * \brief Default constructor.
                 */
-                value_implementation ()
+                default_value ()
                     : p_tValue()
                 {
                 }
@@ -130,7 +130,7 @@ namespace framework
                 /**
                 * \brief Value constructor.
                 */
-                value_implementation (value_type value)
+                default_value (value_type value)
                     : p_tValue(std::move(value))
                 {
                 }
@@ -141,8 +141,8 @@ namespace framework
                 * Overrides the in-place constructor for the empty tuple type, delegating
                 * construction to the default constructor.
                 */
-                value_implementation (std::tuple <>)
-                    : value_implementation ()
+                default_value (std::tuple <>)
+                    : default_value ()
                 {
                 }
 
@@ -159,8 +159,8 @@ namespace framework
                 * \param args value constructor arguments
                 */
                 template <typename... Args>
-                value_implementation (std::tuple <Args&&...>&& args)
-                    : value_implementation (
+                default_value (std::tuple <Args&&...>&& args)
+                    : default_value (
                         std::forward <std::tuple <Args&&...>> (args), 
                         static_cast <make_indices <sizeof... (Args)>*> (nullptr))
                 {
@@ -168,7 +168,7 @@ namespace framework
 
             private:
                 template <typename... Args, std::size_t... Indices>
-                value_implementation (std::tuple <Args&&...> args, index_container <Indices...>*)
+                default_value (std::tuple <Args&&...> args, index_container <Indices...>*)
                     : p_tValue{std::forward <Args> (std::get <Indices> (args))...}
                 {
                 }
@@ -193,7 +193,7 @@ namespace framework
         template <
             typename Name,
             typename Specification,
-            template <typename> class Implementation = value_implementation>
+            template <typename> class Implementation = default_value>
         struct value : public value_type <
             Name,
             Specification,

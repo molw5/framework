@@ -397,11 +397,11 @@ struct object : serializable <object,
 * out the abstraction achieving the secondary 'zero-overhead' design goal.
 *
 * Next, we'll examine serialization operations.  Here, a call to \c read 
-* or \c write invokes a series of static \c serializable_specification 
-* methods defined by the object's type.  As such, the compiler's optimizer
-* here is expected to be capable of producing code equivalent to invoking
-* the underlying stream's read/write functions directly on a raw C 
-* structure.  Again, examining only the simplest possible test case here:
+* or \c write invokes a series of trivial inline tagged read/write methods 
+* defined by the object's type.  As such, the compiler's optimizer is expected
+* to be capable of producing code equivalent to invoking the underlying stream's
+* read/write functions directly on a raw C structure.  Again, examining only
+* the simplest possible test case here:
 * 
 * \include serialization_overhead.cpp
 *

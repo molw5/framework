@@ -1,12 +1,12 @@
 #CXX           = /usr/lib/gcc-snapshot/bin/g++
-CXX           = g++
-#CXX           = clang++
+#CXX           = g++
+CXX           = clang++
 CXX_COMPILE   = $(CXX) -c $(CXX_CFLAGS)
 CXX_LINK	  = $(CXX) $(CXX_LDFLAGS)
 #CXX_CFLAGS	  = -std=c++11 -stdlib=libc++ -pedantic -Wall -Wextra -Werror -I./ -DFRAMEWORK_NO_BOOST
 #CXX_LDFLAGS   = -std=c++11 -stdlib=libc++ -lUnitTest++
-CXX_CFLAGS	  = -std=c++11 -Wall -Wextra -Werror -Wno-trigraphs -I./
-CXX_LDFLAGS   = -std=c++11 -lUnitTest++
+CXX_CFLAGS	  = -std=c++11 -pedantic -Wall -Wextra -Werror -Wno-trigraphs -I./
+CXX_LDFLAGS   = -lUnitTest++
 
 UNAME := $(shell uname -o)
 
@@ -20,7 +20,7 @@ SOURCES = tests/test.cpp \
           tests/serializable/containers/optional_field.cpp \
           tests/serializable/mutators/fixed_container.cpp \
           tests/serializable/mutators/variable_container.cpp \
-          tests/serializable/mutators/terminated.cpp \
+          tests/serializable/mutators/terminated_container.cpp \
           tests/serializable/mutators/tuple_container.cpp \
           tests/serializable/mutators/stl.cpp \
           tests/serializable/interfaces/comparable.cpp \
@@ -41,7 +41,6 @@ EXAMPLES = examples/serializable/a_simple_example.cpp \
            examples/serializable/custom_implementation.cpp \
            examples/serializable/custom_structures.cpp \
            examples/serializable/custom_serialization.cpp \
-           examples/serializable/custom_serialization_boost.cpp \
            examples/serializable/adding_mutator_types.cpp \
            examples/serializable/adding_container_types.cpp \
            examples/serializable/custom_serializable_implementation.cpp \

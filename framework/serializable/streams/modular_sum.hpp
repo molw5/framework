@@ -57,7 +57,15 @@ namespace framework
                 * Gets the checksum, defined as the complement of the 16 bit one's complement sum of
                 * the input data.
                 */
-                using detail::modular_sum_impl <ByteCount, ByteOrder>::get;
+                using detail::modular_sum_impl <ByteCount, ByteOrder>::checksum;
+
+                /**
+                * \brief Get checksum
+                *
+                * Gets the checksum, defined as the complement of the 16 bit one's complement sum of
+                * the input data.
+                */
+                using detail::modular_sum_impl <ByteCount, ByteOrder>::reset;
         };
 
         /**

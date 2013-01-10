@@ -4,7 +4,6 @@
 #include <string.h>
 #include <cstdint>
 #include <cassert>
-#include <algorithm>
 
 #include <framework/common/endian.hpp>
 #include <framework/common/variadic_switch_fallthrough.hpp>
@@ -40,38 +39,45 @@ namespace framework
                 }
             };
 
-            // TODO: Run some simulations to establish a reasonable limit here - 32 was selected arbitrarily.
+            // Selected based on observed modular_sum_overhead_large performance
+            enum{ limit_unroll = 32 };
+
+            // A higher limit could be selected here depending on the number of buffer bits, however the cost
+            // of folding the buffer once over a large number of loops (32) was observed to be negligible in
+            // modular_sum_overhead_large.  A limit of up to 254 can reasonably be used here regardless of the
+            // number of input bytes.
+            enum{ limit_loop = 254 };
+
             template <unsigned int State, std::size_t N>
-            struct unroll <State, N, 0, typename std::enable_if <(N > 32) && (N <= 1024), void>::type>
+            struct unroll <State, N, 0, typename std::enable_if <(N > limit_unroll) && (N <= limit_loop), void>::type>
             {
                 template <typename T>
                 static typename T::buffer_type run (T* this_ptr, char const* s)
                 {
-                    enum { loop_count = N / 32 };
-                    enum { remainder = N % 32 };
+                    enum { loop_count = N / limit_unroll };
+                    enum { remainder = N % limit_unroll };
 
                     typename T::buffer_type result {0};
-                    for (std::size_t i=0; i < loop_count; ++i, s += 32)
-                        result += unroll <State, 32>::run(this_ptr, s);
+                    for (std::size_t i=0; i < loop_count; ++i, s += limit_unroll)
+                        result += unroll <State, limit_unroll>::run(this_ptr, s);
 
                     return result + unroll <State, remainder>::run(this_ptr, s);
                 }
             };
 
-            // TODO: Placeholder, this limit should be based on the number of overflow bits present in buffer_type.
             template <unsigned int State, std::size_t N>
-            struct unroll <State, N, 0, typename std::enable_if <(N > 1024), void>::type>
+            struct unroll <State, N, 0, typename std::enable_if <(N > limit_loop), void>::type>
             {
                 template <typename T>
                 static typename T::buffer_type run (T* this_ptr, char const* s)
                 {
-                    enum { loop_count = N / 1024 };
-                    enum { remainder = N % 1024 };
+                    enum { loop_count = N / limit_loop };
+                    enum { remainder = N % limit_loop };
 
                     typename T::buffer_type result {0};
-                    for (std::size_t i=0; i < loop_count; ++i, s += 1024)
+                    for (std::size_t i=0; i < loop_count; ++i, s += limit_loop)
                     {
-                        result += unroll <State, 1024>::run(this_ptr, s);
+                        result += unroll <State, limit_loop>::run(this_ptr, s);
                         result = (result & T::value_mask) + (result >> T::value_shift);
                     }
 
@@ -79,6 +85,12 @@ namespace framework
                 }
             };
 
+            /**
+            * \brief Generic modular sum implementation.
+            * \note
+            * The write methods used here leave p_iSum with at most a value of one remaining in the
+            * overflow buffer.
+            */
             template <std::size_t ByteCount, framework::byte_order ByteOrder>
             class modular_sum_impl
             {
@@ -121,7 +133,7 @@ namespace framework
                         >::type;
     
                     enum 
-                    { 
+                    {
                         byte_count = ByteCount,
                         value_mask = (~static_cast <buffer_type> (0)) >> (8*(sizeof(buffer_type)-ByteCount)),
                         value_shift = 8*ByteCount,
@@ -171,6 +183,7 @@ namespace framework
                                       "Not implemented");
 
                         // TODO: This could be improved moderately by limiting the switch to the range [0, bye_count).
+                        // Process the first block - either clear the state or read in the required bytes
                         auto const count = std::min(std::size_t(byte_count - p_iState), n);
                         switch (count)
                         {
@@ -189,43 +202,54 @@ namespace framework
                             case 0: break;
                         }
 
-                        while (true)
+                        // Worst case the overflow buffer will support at least 254 operations between each fold
+                        enum{ loop_1_size = 16*byte_count };
+                        for (; n > loop_1_size; n-=loop_1_size, s+=loop_1_size)
                         {
-                            switch (n)
-                            {
-                                default:
-                                case 8: p_iSum += static_cast <buffer_type> (uint8_t(s[7])) << (offset + multiplier*(7 % byte_count));
-                                case 7: p_iSum += static_cast <buffer_type> (uint8_t(s[6])) << (offset + multiplier*(6 % byte_count));
-                                case 6: p_iSum += static_cast <buffer_type> (uint8_t(s[5])) << (offset + multiplier*(5 % byte_count));
-                                case 5: p_iSum += static_cast <buffer_type> (uint8_t(s[4])) << (offset + multiplier*(4 % byte_count));
-                                case 4: p_iSum += static_cast <buffer_type> (uint8_t(s[3])) << (offset + multiplier*(3 % byte_count));
-                                case 3: p_iSum += static_cast <buffer_type> (uint8_t(s[2])) << (offset + multiplier*(2 % byte_count));
-                                case 2: p_iSum += static_cast <buffer_type> (uint8_t(s[1])) << (offset + multiplier*(1 % byte_count));
-                                case 1: p_iSum += static_cast <buffer_type> (uint8_t(s[0])) << offset;
-                                        p_iSum = (p_iSum & value_mask) + (p_iSum >> value_shift);
-                                        break;
-
-                                case 0: return true;
-                            }
-    
-                            if (n <= 8)
-                            {
-                                p_iState = (p_iState + n) % byte_count;
-                                return true;
-                            }
-                        
-                            s += 8;
-                            n -= 8;
+                            p_iSum += unroll <0, loop_1_size>::run(this, s);
+                            p_iSum = (p_iSum & value_mask) + (p_iSum >> value_shift);
                         }
+
+                        // Process any remaining complete blocks
+                        enum{ loop_2_size = byte_count };
+                        for (; n > loop_2_size; n-=loop_2_size, s+=loop_2_size)
+                        {
+                            p_iSum += unroll <0, loop_2_size>::run(this, s);
+                            p_iSum = (p_iSum & value_mask) + (p_iSum >> value_shift);
+                        }
+
+                        // Process the final block
+                        switch (n)
+                        {
+                            case 8: p_iSum += static_cast <buffer_type> (uint8_t(s[7])) << (offset + multiplier*(7 % byte_count));
+                            case 7: p_iSum += static_cast <buffer_type> (uint8_t(s[6])) << (offset + multiplier*(6 % byte_count));
+                            case 6: p_iSum += static_cast <buffer_type> (uint8_t(s[5])) << (offset + multiplier*(5 % byte_count));
+                            case 5: p_iSum += static_cast <buffer_type> (uint8_t(s[4])) << (offset + multiplier*(4 % byte_count));
+                            case 4: p_iSum += static_cast <buffer_type> (uint8_t(s[3])) << (offset + multiplier*(3 % byte_count));
+                            case 3: p_iSum += static_cast <buffer_type> (uint8_t(s[2])) << (offset + multiplier*(2 % byte_count));
+                            case 2: p_iSum += static_cast <buffer_type> (uint8_t(s[1])) << (offset + multiplier*(1 % byte_count));
+                            case 1: p_iSum += static_cast <buffer_type> (uint8_t(s[0])) << offset;
+                                    p_iSum = (p_iSum & value_mask) + (p_iSum >> value_shift);
+                                    break;
+                        }
+    
+                        p_iState = (p_iState + n) % byte_count;
+                        return true;
                     };
     
-                    value_type get () const
+                    value_type checksum () const
                     {
                         buffer_type result = p_iSum;
                         while (result >> value_shift)
                             result = (result & value_mask) + (result >> value_shift);
     
                         return ~result;
+                    }
+
+                    void reset ()
+                    {
+                        p_iSum = 0;
+                        p_iState = 0;
                     }
     
                 protected:
@@ -251,7 +275,8 @@ namespace framework
 
             public:
                 using base::write;
-                using base::get;
+                using base::checksum;
+                using base::reset;
 
 #ifndef FRAMEWORK_MODULAR_SUM_SUPPRESS_OPTIMIZATIONS
     #if FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
@@ -267,20 +292,17 @@ namespace framework
 
 #ifndef FRAMEWORK_MODULAR_SUM_SUPPRESS_OPTIMIZATIONS
     #ifdef FRAMEWORK_MODULAR_SUM_UNSAFE
-        #if FRAMEWORK_MODULAR_SUM_UNSAFE == 0
-            // Worst case this optimization will overflow the deferred carry buffer after summing on the order of 512TB worth of data
-            #define FRAMEWORK_MODULAR_SUM_FOLD static_assert(sizeof(buffer_type) == 8, "This optimization requires sizeof(uint_fast16_t) == 8")
-        #elif FRAMEWORK_MODULAR_SUM_UNSAFE == 1
-            // This optimization is reasonably safe, provided modular_sum_impl is conservative in it's overflow estimate
-            #define FRAMEWORK_MODULAR_SUM_FOLD this->p_iSum = (this->p_iSum & base::value_mask) + (this->p_iSum >> base::value_shift)
-        #elif FRAMEWORK_MODULAR_SUM_UNSAFE == 2
-            // Worst case this optimization will overflow the deferred carry buffer after summing on the order of 8GB worth of data
-            #define FRAMEWORK_MODULAR_SUM_FOLD static_assert(sizeof(buffer_type) == 8, "The optimization requires sizeof(uint_fast16_t) == 8")
-        #else
-            #error "Unknown optimization type"
-        #endif
+        // Worst case this optimization will overflow the deferred carry buffer after summing on the order of 512TB worth of data
+        #define FRAMEWORK_MODULAR_SUM_FOLD static_assert(sizeof(buffer_type) == 8, "This optimization requires sizeof(uint_fast16_t) == 8")
     #else
-        #define FRAMEWORK_MODULAR_SUM_FOLD this->p_iSum = (this->p_iSum & base::value_mask) + (this->p_iSum >> base::value_shift)
+        #if defined(__GNUC__) && !defined(__clang__)
+            #define FRAMEWORK_MODULAR_SUM_FOLD \
+                if (static_cast <int> (this->p_iSum) < 0) \
+                    this->p_iSum = (this->p_iSum & base::value_mask) + (this->p_iSum >> base::value_shift)
+        #else
+            #define FRAMEWORK_MODULAR_SUM_FOLD \
+                this->p_iSum = (this->p_iSum & base::value_mask) + (this->p_iSum >> base::value_shift)
+        #endif
     #endif
 
                 template <std::size_t N>
@@ -321,14 +343,8 @@ namespace framework
                 bool write (uint32_t value)
                 {
                     auto const offset = base::offset + base::multiplier*((this->p_iState + host_shift) % 2);
-
-    #if FRAMEWORK_MODULAR_SUM_UNSAFE >= 1
-                    this->p_iSum += static_cast <buffer_type> (value) << offset;
-    #else
                     auto const tmp = (value >> 16) + (value & 0xFFFF);
                     this->p_iSum += static_cast <buffer_type> (tmp) << offset;
-    #endif
-
                     FRAMEWORK_MODULAR_SUM_FOLD;
                     return true;
                 }
@@ -337,14 +353,8 @@ namespace framework
                 {
                     auto const offset = base::offset + base::multiplier*((this->p_iState + host_shift) % 2);
                     auto const tmp1 = (value >> 32) + (value & 0xFFFFFFFF);
-
-    #if FRAMEWORK_MODULAR_SUM_UNSAFE >= 1
-                    this->p_iSum += static_cast <buffer_type> (tmp1) << offset;
-    #else
                     auto const tmp2 = (tmp1 >> 16) + (tmp1 & 0xFFFF);
                     this->p_iSum += static_cast <buffer_type> (tmp2) << offset;
-    #endif
-
                     FRAMEWORK_MODULAR_SUM_FOLD;
                     return true;
                 }
