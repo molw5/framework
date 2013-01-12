@@ -13,6 +13,8 @@
 #pragma once
 
 #include <framework/serializable/base_types.hpp>
+#include <framework/common/common_macros.hpp>
+#include <framework/common/containers/pack_container.hpp>
 
 namespace framework
 {
@@ -63,13 +65,34 @@ namespace framework
             typename Specification,
             typename Children,
             bool Default = true>
-#ifndef DOXYGEN
-        struct container_type;
-#else
         struct container_type
         {
-        };
+// GCC bug workaround - www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#580
+#if MAX_GNUC_VERSION(4, 8, 0)
+            public:
+#else
+            template <typename T, typename Enabler>
+            friend struct detail::is_container_type_impl;
+            
+            template <typename T, typename Enabler>
+            friend struct detail::is_container_default_serializable_impl;
+
+            template <typename T>
+            friend struct detail::container_specification_impl;
+            
+            template <typename T>
+            friend struct detail::container_children_impl;
+            
+            private:
 #endif
+                using serializable_container_enabler = void;
+                using serializable_container_specification = typename std::enable_if <is_pack_container <Specification>::value, Specification>::type;
+                using serializable_container_children = typename std::enable_if <is_pack_container <Children>::value, Children>::type;
+                enum{ serializable_container_default = Default };
+
+                container_type () = delete;
+                ~container_type () = delete;
+        };
         
         /**
         * \headerfile container_type.hpp <framework/serializable/container_type.hpp>

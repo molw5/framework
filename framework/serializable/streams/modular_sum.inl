@@ -170,7 +170,7 @@ namespace framework
                                       ByteOrder == ::framework::byte_order::big_endian, 
                                       "Not implemented");
     
-                        p_iSum += variadic_switch_return <make_value_indices <byte_count>> (p_iState, handler_fixed <N> (), this, s);
+                        p_iSum += variadic_switch_return <make_values <std::size_t, byte_count>> (p_iState, handler_fixed <N> (), this, s);
                         p_iSum = (p_iSum & value_mask) + (p_iSum >> value_shift);
                         return true;
                     }
@@ -280,10 +280,8 @@ namespace framework
 
 #ifndef FRAMEWORK_MODULAR_SUM_SUPPRESS_OPTIMIZATIONS
     #if FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
-        #define FRAMEWORK_MODULAR_SUM_USE_OPTIMIZATIONS
                 enum{ host_shift = 0 };
     #elif FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_BIG_ENDIAN
-        #define FRAMEWORK_MODULAR_SUM_USE_OPTIMIZATIONS
                 enum{ host_shift = 1 };
     #else
         #define FRAMEWORK_MODULAR_SUM_SUPPRESS_OPTIMIZATIONS
@@ -360,5 +358,45 @@ namespace framework
                 }
 #endif
         };
+
+
+// Little endian and big endian machines may skip the byte reversal with a shift
+#if false
+
+#ifndef FRAMEWORK_MODULAR_SUM_SUPPRESS_OPTIMIZATIONS
+    #if FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
+        template <
+            typename T,
+            std::size_t ByteCount, 
+            ::framework::byte_order ByteOrder>
+        bool dispatch_write (T const& in, modular_sum <ByteCount, ByteOrder> &out,
+            big_endian <T>*,
+            typename std::enable_if <
+                std::is_arithmetic <T>::value &&
+                sizeof(T) == 2,
+                void
+            >::type* = nullptr)
+        {
+            return out.write(static_cast <uint32_t> (in) << 8);
+        }
+
+        template <
+            typename T,
+            std::size_t ByteCount, 
+            ::framework::byte_order ByteOrder>
+        bool dispatch_write (T const& in, modular_sum <ByteCount, ByteOrder> &out,
+            big_endian <T>*,
+            typename std::enable_if <
+                std::is_arithmetic <T>::value &&
+                (sizeof(T) == 4 || sizeof(T) == 6),
+                void
+            >::type* = nullptr)
+        {
+            return out.write(static_cast <uint64_t> (in) << 8);
+        }
+    #endif
+#endif
+
+#endif
     }
 }

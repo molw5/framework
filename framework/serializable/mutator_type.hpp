@@ -42,7 +42,7 @@ namespace framework
         * type_extractor <T>
         * \endcode
         *
-        * type.  For example, during the serialization of the following object
+        * type.  For example, during the deserialization of the following object
         *
         * \code
         * class Object : serializable <Object
@@ -52,9 +52,9 @@ namespace framework
         * };
         * \endcode
         *
-        * \c serializable and \c value's readers both accept an output object of type
-        * Object while \c little_endian and big_endian's readers accept an unsigned
-        * integer and a float respectively.
+        * the read methods associated with \c serializable and \c value both accept an output 
+        * object of type \c Object while those associated with \c little_endian and big_endian's 
+        * accept an unsigned integer and a float respectively.
         *
         * \note
         * No default serialization method is provided here - it is not clear what role
@@ -78,7 +78,7 @@ namespace framework
             private:
 #endif
                 using serializable_mutator_type_enabler = void;
-                using mutator_child = Child;
+                using serializable_mutator_child = Child;
 
                 mutator_type () = delete;
                 ~mutator_type () = delete;

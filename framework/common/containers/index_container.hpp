@@ -16,8 +16,14 @@ namespace framework
 {
     namespace detail
     {
+        template <typename T>
+        struct is_index_container_impl;
+
         template <std::size_t Size>
         struct make_indices_impl;
+
+        template <typename... Indices>
+        struct merge_indices_impl;
     }
 
     /**
@@ -32,6 +38,31 @@ namespace framework
         */
         enum { size = sizeof... (Indices) };
     };
+
+    /**
+    * \headerfile index_container.hpp <framework/common/containers/index_container.hpp>
+    *
+    * Type trait testing whether or not T is an \c index_container.
+    */
+    template <typename T>
+    using is_index_container = typename detail::is_index_container_impl <T>::type;
+
+    /**
+    * \headerfile index_container.hpp <framework/common/containers/index_container.hpp>
+    * \brief Merge index containers.
+    *
+    * Constructs an \c index_container containing all elements of the provided containers,
+    * in the order they appear.  For example, the following are equivalent:
+    *
+    * \code
+    * using results = merge_indices <index_container <1, 2, 3>, index_container <4, 5, 6>>;
+    * using results = index_container <1, 2, 3, 4, 5, 6>;
+    * \endcode
+    *
+    * \tparam Containers input \c index_container types
+    */
+    template <typename... Containers>
+    using merge_indices = typename detail::merge_indices_impl <Containers...>::type;
 
     /**
     * \headerfile index_container.hpp <framework/common/containers/index_container.hpp>

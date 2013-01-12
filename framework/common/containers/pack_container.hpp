@@ -24,6 +24,9 @@ namespace framework
         
         template <typename Pack>
         struct unique_filter_pack_impl;
+
+        template <typename T>
+        struct is_pack_container;
     }
 
     /**
@@ -40,6 +43,14 @@ namespace framework
         */
         enum { size = sizeof... (Types) };
     };
+
+    /**
+    * \headerfile pack_container.hpp <framework/common/containers/pack_container.hpp>
+    *
+    * Type trait testing whether or not T is a pack_container.
+    */
+    template <typename T>
+    using is_pack_container = typename detail::is_pack_container <T>::type;
 
     /**
     * \headerfile pack_container.hpp <framework/common/containers/pack_container.hpp>

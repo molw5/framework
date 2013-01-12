@@ -34,6 +34,9 @@ namespace framework
             template <typename T>
             struct object_names_impl;
 
+            template <typename T>
+            struct object_specification_impl;
+
             template <typename T, template <typename> class Path, typename Enabler = void>
             struct extract_values_impl;
         }
@@ -117,7 +120,7 @@ namespace framework
         /**
         * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
         *
-        * Gets the base type associated with \c Name in \c T, storing the result in \c type.
+        * Gets the base type associated with \c Name in \c T.
         *
         * \pre is_derived_type <T>::value == true
         */
@@ -136,6 +139,16 @@ namespace framework
 
         /**
         * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
+        *
+        * Gets the specification associated with T.
+        *
+        * \pre is_derived_type <T>::value == true
+        */
+        template <typename T>
+        using object_specification = typename detail::object_specification_impl <T>::type;
+
+        /**
+        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
         * \brief Extracts value types.
         *
         * Generates a \c pack_container of all value types accessible from \c T, using
@@ -143,16 +156,13 @@ namespace framework
         * the following two result types are equivalent:
         *
         * \code
-        * using result = 
-        *     typename extract_values <
+        * using result = extract_values <
+        *     alias <
+        *         value <NAME("Field 1"), int>,
         *         alias <
-        *             value <NAME("Field 1"), int>,
-        *             alias <
-        *                 value <NAME("Field 2"), float>,
-        *                 value <NAME("Field 3"), double>>,
-        *             value <NAME("Field 4"), short>>,
-        *         get_container_children
-        *     >::type;
+        *             value <NAME("Field 2"), float>,
+        *             value <NAME("Field 3"), double>>,
+        *         value <NAME("Field 4"), short>>>;
         *
         * using result = pack_container <
         *     value <NAME("Field 1"), int>,
@@ -164,8 +174,8 @@ namespace framework
         * \tparam T container type
         * \tparam Path path to follow through the tree
         */
-        template <typename T, template <typename> class Path>
-        using extract_values = typename detail::extract_values_impl <T, Path>::type;
+        template <typename Pack, template <typename> class Path>
+        using extract_values = typename detail::extract_values_impl <Pack, Path>::type;
 
         /**
         * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
@@ -183,6 +193,25 @@ namespace framework
             extract_values <alias <Specification...>, container_specification>,
             extract_values <alias <Specification...>, container_children>,
             extract_values <alias <Specification...>, container_children>>;
+
+        /**
+        * \headerfile serializable.hpp <framework/serializable/serializable.hpp>
+        * \brief Implementation alias.
+        *
+        * Custom serializable_implementation alias; no default marshalling functions are provided for
+        * the derived type.
+        *
+        * \tparam Derived derived class
+        * \tparam Specification child types
+        */
+        template <typename Derived, typename... Specification>
+        using custom_serializable = serializable_implementation <
+            Derived, 
+            alias <Specification...>,
+            extract_values <alias <Specification...>, container_specification>,
+            extract_values <alias <Specification...>, container_children>,
+            extract_values <alias <Specification...>, container_children>,
+            false>;
     }
 }
 

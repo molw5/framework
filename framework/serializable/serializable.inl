@@ -66,6 +66,16 @@ namespace framework
                     >::type;
             };
 
+            template <typename T>
+            struct object_specification_impl
+            {
+                using type =
+                    typename std::enable_if <
+                        is_object_type <T>::value,
+                        typename T::serializable_object_specification
+                    >::type;
+            };
+
             template <typename T, template <typename> class Path>
             struct extract_values_impl <T, Path,
                 typename std::enable_if <
@@ -97,6 +107,30 @@ namespace framework
             {
                 using type = merge_packs <extract_values <Children, Path>...>;
             };
+
+            template <typename Derived, bool Default>
+            struct marshal;
+
+            template <typename Derived>
+            struct marshal <Derived, false>
+            {
+            };
+
+            template <typename Derived>
+            struct marshal <Derived, true>
+            {
+                template <typename Input>
+                friend bool custom_read (Input& in, Derived& out)
+                {
+                    return dispatch_read <object_specification <Derived>> (in, out);
+                }
+
+                template <typename Output>
+                friend bool custom_write (Derived const& in, Output& out)
+                {
+                    return dispatch_write <object_specification <Derived>> (in, out);
+                }
+            };
         }
 
         template <
@@ -112,17 +146,18 @@ namespace framework
                 pack_container <Inherited...>,
                 pack_container <Constructed...>,
                 pack_container <Visible...>,
-                Default
-            > : public value_implementation <Inherited, Derived>...
+                Default> 
+            : public detail::marshal <Derived, Default>,
+              public value_implementation <Inherited, Derived>...
         {
 // GCC bug workaround - www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#580
 #if MAX_GNUC_VERSION(4, 8, 0)
             public:
 #else
-            template <typename T, typename Enabler = void>
+            template <typename T, typename Enabler>
             friend struct detail::is_object_type_impl;
 
-            template <typename T, typename Enabler = void>
+            template <typename T, typename Enabler>
             friend struct detail::is_object_default_serializable_impl;
 
             template <typename T, typename Name>
@@ -131,9 +166,13 @@ namespace framework
             template <typename T>
             friend struct detail::object_names_impl;
 
+            template <typename T>
+            friend struct detail::object_specification_impl;
+
             private:
 #endif
                 using serializable_object_enabler = void;
+                using serializable_object_specification = Specification;
                 using serializable_object_visible_names = pack_container <value_name <Visible>...>;
                 
                 using serializable_object_base_map = 
@@ -160,21 +199,6 @@ namespace framework
                     : value_implementation <Constructed, Derived> (std::forward <Args> (args))...
                 {
                 }
-
-            // Inject the marshalling functions
-            template <typename Input>
-            friend bool custom_read (Input& in, Derived& out,
-                typename std::enable_if <Default, void>::type* = nullptr)
-            {
-                return dispatch_read <Specification> (in, out);
-            }
-
-            template <typename Output>
-            friend bool custom_write (Derived const& in, Output& out,
-                typename std::enable_if <Default, void>::type* = nullptr)
-            {
-                return dispatch_write <Specification> (in, out);
-            }
         };
     }
 }

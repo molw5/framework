@@ -47,5 +47,17 @@ namespace framework
         {
             using type = T;
         };
+
+        template <typename T>
+        struct is_pack_container
+        {
+            using type = std::false_type;
+        };
+
+        template <typename... Values>
+        struct is_pack_container <pack_container <Values...>>
+        {
+            using type = std::true_type;
+        };
     }
 }

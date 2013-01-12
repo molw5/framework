@@ -7,6 +7,18 @@ namespace framework
 {
     namespace detail
     {
+        template <typename T>
+        struct is_type_string_impl
+        {
+            using type = std::false_type;
+        };
+
+        template <char... Array>
+        struct is_type_string_impl <type_string <Array...>>
+        {
+            using type = std::true_type;
+        };
+
         template <char... Array>
         struct make_type_string_impl;
 

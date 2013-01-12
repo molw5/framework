@@ -26,6 +26,7 @@ namespace framework
         *
         * Provides a simple wrapper around a \c serializable_implementation, allowing
         * container value types to be naturally defined in a serializable type as follows:
+        *
         * \code
         * class Object : serializable <Object,
         *     value <NAME("Field 1"), little_endian <float>>,
@@ -37,13 +38,17 @@ namespace framework
         * {
         * };
         * \endcode
+        *
         * Aliases are provided by the wrapper for the most common accessor methods, 
         * get, set, check, and clear allowing nested access similar to
+        *
         * \code
         * Object x;
         * get <NAME("Value Field 2")> (get <NAME("Field 3")> (x)[0]);
         * \endcode
+        *
         * the following equivalent syntax
+        *
         * \code
         * Object x;
         * get <NAME("Field 3")> (x)[0].get <NAME("Value Field 2")> ();

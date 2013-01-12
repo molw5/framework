@@ -27,7 +27,7 @@ namespace framework
                 using type =
                     typename std::enable_if <
                         is_mutator_type <T>::value,
-                        typename T::mutator_child
+                        typename T::serializable_mutator_child
                     >::type;
             };
 

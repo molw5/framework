@@ -40,7 +40,7 @@ namespace framework
         * \tparam byte_count number of bytes to use in the sum
         * \tparam ByteOrder input byte sequence endianness
         */
-        template <std::size_t ByteCount = 2, framework::byte_order ByteOrder = framework::byte_order::big_endian>
+        template <std::size_t ByteCount = 2, ::framework::byte_order ByteOrder = framework::byte_order::big_endian>
         class modular_sum : private detail::modular_sum_impl <ByteCount, ByteOrder>
         {
             public:

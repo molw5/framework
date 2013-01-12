@@ -16,6 +16,9 @@ namespace framework
 {
     namespace detail
     {
+        template <typename T>
+        struct is_type_string_impl;
+
         template <char... Array>
         struct make_type_string_impl;
 
@@ -37,6 +40,14 @@ namespace framework
         */
         enum { size = sizeof... (Array) };
     };
+
+    /**
+    * \headerfile type_string.hpp <framework/common/containers/type_string.hpp>
+    *
+    * Type trait testing whether or not T is a \c type_string.
+    */
+    template <typename T>
+    using is_type_string = typename detail::is_type_string_impl <T>::type;
 
     /**
     * \headerfile type_string.hpp <framework/common/containers/type_string.hpp>

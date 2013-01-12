@@ -55,10 +55,18 @@ namespace framework
 }
 
 #if defined(__clang__)
-    #define FRAMEWORK_BYTESWAP8(x) x
-    #define FRAMEWORK_BYTESWAP16(x) __builtin_bswap16(x)
-    #define FRAMEWORK_BYTESWAP32(x) __builtin_bswap32(x)
-    #define FRAMEWORK_BYTESWAP64(x) __builtin_bswap64(x)
+    // TODO - Check these definitions when 3.3 is released
+    #if MAX_CLANG_VERSION(3, 2, 0)
+        #define FRAMEWORK_BYTESWAP8(x) x
+        #define FRAMEWORK_BYTESWAP16(x) ::framework::bswap16(x)
+        #define FRAMEWORK_BYTESWAP32(x) __builtin_bswap32(x)
+        #define FRAMEWORK_BYTESWAP64(x) __builtin_bswap64(x)
+    #else
+        #define FRAMEWORK_BYTESWAP8(x) x
+        #define FRAMEWORK_BYTESWAP16(x) __builtin_bswap16(x)
+        #define FRAMEWORK_BYTESWAP32(x) __builtin_bswap32(x)
+        #define FRAMEWORK_BYTESWAP64(x) __builtin_bswap64(x)
+    #endif
 #elif defined(__GNUC__)
     #define FRAMEWORK_BYTESWAP8(x) x
     #define FRAMEWORK_BYTESWAP16(x) ::framework::bswap16(x)

@@ -5,68 +5,65 @@
 * \file
 * \brief Fundamental serializable definitions.
 *
-* Provides the fundamental serialization definitions extended by the remainder of this library to
-* support specific types of serialization.
-*
 * Provides the fundamental definitions extended by the remainder of this library to support specific
 * types of serialization.  Marshalling of data is performed using a collection of read/write method
 * overloads, invoked as follows:
 *
 * \code
-* read <Specification> (in, out);
-* write <Specification> (in, out);
+* dispatch_read <Specification> (in, out);
+* dispatch_write <Specification> (in, out);
 * \endcode
 *
 * or through the following equivalent syntax:
 *
 * \code
-* read(in, out, (Specification*)nullptr);
-* write(in, out, (Specification*)nullptr);
+* dispatch_read(in, out, (Specification*)nullptr);
+* dispatch_write(in, out, (Specification*)nullptr);
 * \endcode
 * 
 * It is important to note that the Specification provided to the above is used exclusively to define
-* exclusively to define how the object is to be serialized.  Specifically, there is no fundamental 
-* requirement that \c Specification match the associated input or output object above  This allows
-* code to alter how the serialization of a class takes place without altering it's definition - for
-* example, the following is well defined:
+* how the object is to be serialized.  Specifically, there is no fundamental requirement that 
+* \c Specification match the associated input or output object above  This allows code to alter how 
+* the serialization of a class takes place without altering it's definition - for example, the following 
+* is well defined:
 *
 * \code
-struct S1 : serializable <S1,
-    value <NAME("Field 1"), int>,
-    value <NAME("Field 2"), float>,
-    value <NAME("Field 3"), double>,
-    value <NAME("Field 4"), short>>
-{
-} s1 {1, 2.0f, 3.0, 4};
-
-struct S2 : serializable <S2,
-    value <NAME("Field 1"), int>,
-    value <NAME("Field 3"), double>>
-{
-} s2 {0, 0};
-
-std::stringstream ss;
-write <S2> (s1, ss);
-read <S2> (ss, s2);
+* struct S1 : serializable <S1,
+*     value <NAME("Field 1"), int>,
+*     value <NAME("Field 2"), float>,
+*     value <NAME("Field 3"), double>,
+*     value <NAME("Field 4"), short>>
+* {
+* } s1 {1, 2.0f, 3.0, 4};
+* 
+* struct S2 : serializable <S2,
+*     value <NAME("Field 1"), int>,
+*     value <NAME("Field 3"), double>>
+* {
+* } s2 {0, 0};
+* 
+* std::stringstream ss;
+* dispatch_write <S2> (s1, ss);
+* dispatch_read <S2> (ss, s2);
 * \endcode
 *
 * More commonly the alias template may be used to define part of the object's specification for
-* use cases similar to the above.  For example, the following code could be used together with
-* a checksum stream to compute a header-only checksum.
+* use cases similar to the above.  For example, the following computes a header-only checksum of
+* the associated object:
 *
 * \code
-using Header = alias <
-    value <NAME("Field 1"), int>,
-    value <NAME("Field 2"), float>>;
-
-struct S1 : serializable <S1, Header,
-    value <NAME("Field 3"), double>,
-    value <NAME("Field 4"), short>>
-{
-} s1 {1, 2.0f, 3.0, 4};
-
-internet_checksum chk;
-write <Header> (s1, chk);
+* using Header = alias <
+*     value <NAME("Field 1"), int>,
+*     value <NAME("Field 2"), float>>;
+*
+* struct S1 : serializable <S1, Header,
+*     value <NAME("Field 3"), double>,
+*     value <NAME("Field 4"), short>>
+* {
+* } s1 {1, 2.0f, 3.0, 4};
+*
+* internet_checksum chk;
+* dispatch_write <Header> (s1, chk);
 * \endcode
 *
 * Note that template partial specialization was originally used here to discriminate between types - 
@@ -97,9 +94,8 @@ write <Header> (s1, chk);
 * The above overload will now take precedence over the default stl_vector read definition in any
 * translation unit where we define the above; the two definitions may coexist within an application.  
 * Contrast this to template partial specialization where a solution similar to the above may still be 
-* used with the caveat that it \em must always take precedence to avoid violating the one definition
-* rule.  This produces highly fragile code and effectively eliminates this optimization path in 
-* practice.
+* used with the caveat that it \em must always take precedence.  In practice, this produces highly
+* fragile code and effectively eliminates this optimization path.
 *
 * \copyright
 * Copyright &copy; 2012 iwg molw5<br>

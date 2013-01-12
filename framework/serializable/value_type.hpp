@@ -62,13 +62,40 @@ namespace framework
             typename Specification,
             template <typename> class Interface,
             bool Default = true>
-#ifndef DOXYGEN
-        struct value_type;
-#else
         struct value_type
         {
-        };
+// GCC bug workaround - www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#580
+#if MAX_GNUC_VERSION(4, 8, 0)
+            public:
+#else
+            template <typename T, typename Enabler>
+            friend struct detail::is_value_type_impl;
+
+            template <typename T>
+            friend struct detail::is_value_default_serializable_impl;
+
+            template <typename T>
+            friend struct detail::value_name_impl;
+
+            template <typename T>
+            friend struct detail::value_specification_impl;
+
+            template <typename T, typename Derived>
+            friend struct detail::value_implementation_impl;
+
+            private:
 #endif
+                using serializable_value_enabler = void;
+                using serializable_value_name = Name;
+                using serializable_value_specification = Specification;
+                enum{ serializable_value_default = Default };
+
+                template <typename T>
+                using serializable_value_implementation = Interface <T>;
+
+                value_type () = delete;
+                ~value_type () = delete;
+        };
 
         /**
         * \headerfile value_type.hpp <framework/serializable/value_type.hpp>

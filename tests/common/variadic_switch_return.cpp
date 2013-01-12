@@ -41,7 +41,7 @@ SUITE(framework_variadic_switch_return_hpp)
         for (int i=0; i < 10; ++i)
         {
             auto const x1 = switch_check(i);
-            auto const x2 = variadic_switch_return <make_value_indices <5>> (i, switch_value());
+            auto const x2 = variadic_switch_return <make_values <std::size_t, 5>> (i, switch_value());
 
             CHECK(x1 == x2);
         }
