@@ -36,16 +36,13 @@ namespace framework
 
             private:
                 template <std::size_t N, bool State>
-                FRAMEWORK_DISPATCH_TAG
                 bool write_impl (char const* s);
 
                 template <bool State>
-                FRAMEWORK_DISPATCH_TAG
                 bool write_impl (char const* s, std::size_t n);
 
             public:
                 template <bool Flip = false>
-                FRAMEWORK_DISPATCH_TAG
                 bool write (char const* s, std::size_t n)
                 {
                     if (p_bState != Flip)
@@ -55,7 +52,6 @@ namespace framework
                 }
 
                 template <std::size_t N, bool Flip = false>
-                FRAMEWORK_DISPATCH_TAG
                 bool write (char const* s) 
                 {
                     if (p_bState != Flip)

@@ -11,14 +11,12 @@ namespace framework
             struct recursive_serializable_specification <pack_container <>>
             {
                 template <typename Input, typename Output>
-                FRAMEWORK_DISPATCH_TAG
                 static bool read (Input&, Output&)
                 {
                     return true;
                 }
 
                 template <typename Input, typename Output>
-                FRAMEWORK_DISPATCH_TAG
                 static bool write (Input const&, Output&)
                 {
                     return true;
@@ -29,7 +27,6 @@ namespace framework
             struct recursive_serializable_specification <pack_container <Head, Tail...>>
             {
                 template <typename Input, typename Output>
-                FRAMEWORK_DISPATCH_TAG
                 static bool read (Input& in, Output& out)
                 {
                     using ::framework::serializable::dispatch_read;
@@ -40,7 +37,6 @@ namespace framework
                 }
 
                 template <typename Input, typename Output>
-                FRAMEWORK_DISPATCH_TAG
                 static bool write (Input const& in, Output& out)
                 {
                     using ::framework::serializable::dispatch_write;

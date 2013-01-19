@@ -120,14 +120,12 @@ namespace framework
             struct marshal <Derived, true>
             {
                 template <typename Input>
-                FRAMEWORK_DISPATCH_TAG 
                 friend bool custom_read (Input& in, Derived& out)
                 {
                     return dispatch_read <object_specification <Derived>> (in, out);
                 }
 
                 template <typename Output>
-                FRAMEWORK_DISPATCH_TAG
                 friend bool custom_write (Derived const& in, Output& out)
                 {
                     return dispatch_write <object_specification <Derived>> (in, out);

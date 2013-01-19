@@ -89,7 +89,6 @@ namespace framework
         // wrappers around integral types, nested specifications (ie: big_endian <big_endian <uint32_t>>)
         // are unaffected.
         template <typename T>
-        FRAMEWORK_DISPATCH_TAG
         bool dispatch_write (T const& in, internet_checksum& out, big_endian <T>*,
             typename std::enable_if <
                 std::is_integral <T>::value,
@@ -102,7 +101,6 @@ namespace framework
 
 #if FRAMEWORK_HOST_FLOAT_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
         template <typename T>
-        FRAMEWORK_DISPATCH_TAG
         bool dispatch_write (T const& in, internet_checksum& out, big_endian <T>*,
             typename std::enable_if <
                 std::is_floating_point <T>::value,
