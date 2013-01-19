@@ -1,0 +1,106 @@
+System information:
+development
+    description: Computer
+    width: 64 bits
+    capabilities: vsyscall32
+  *-memory
+       description: System memory
+       physical id: 0
+       size: 3637MiB
+  *-cpu:0
+       product: AMD Phenom(tm) II X4 965 Processor
+       vendor: Advanced Micro Devices [AMD]
+       physical id: 1
+       bus info: cpu@0
+       width: 64 bits
+       capabilities: fpu fpu_exception wp de tsc msr pae cx8 cmov pat clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt x86-64 3dnowext 3dnow rep_good nopl pni cx16 popcnt hypervisor lahf_lm cmp_legacy extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch
+  *-cpu:1
+       product: AMD Phenom(tm) II X4 965 Processor
+       vendor: Advanced Micro Devices [AMD]
+       physical id: 2
+       bus info: cpu@1
+       width: 64 bits
+       capabilities: fpu fpu_exception wp de tsc msr pae cx8 cmov pat clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt x86-64 3dnowext 3dnow rep_good nopl pni cx16 popcnt hypervisor lahf_lm cmp_legacy extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch
+  *-cpu:2
+       product: AMD Phenom(tm) II X4 965 Processor
+       vendor: Advanced Micro Devices [AMD]
+       physical id: 3
+       bus info: cpu@2
+       width: 64 bits
+       capabilities: fpu fpu_exception wp de tsc msr pae cx8 cmov pat clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt x86-64 3dnowext 3dnow rep_good nopl pni cx16 popcnt hypervisor lahf_lm cmp_legacy extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch
+  *-cpu:3
+       product: AMD Phenom(tm) II X4 965 Processor
+       vendor: Advanced Micro Devices [AMD]
+       physical id: 4
+       bus info: cpu@3
+       width: 64 bits
+       capabilities: fpu fpu_exception wp de tsc msr pae cx8 cmov pat clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt x86-64 3dnowext 3dnow rep_good nopl pni cx16 popcnt hypervisor lahf_lm cmp_legacy extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch
+
+SUM_CONTROL_1...
+rm -f ./modular_sum_overhead_small
+g++ (GCC) 4.7.2 20120921 (Red Hat 4.7.2-2)
+g++ -DCOUNT=1000000000 -DSUM_CONTROL_1 -I../../ -std=c++11 -O3 ./modular_sum_overhead_small.cpp -o ./modular_sum_overhead_small
+Result: 422814985
+Duration: 15358709000ns
+Operation Time: 15.3587ns
+Time Per Byte: 0.767935ns
+
+rm -f ./modular_sum_overhead_small
+clang version 3.3 (trunk 172903)
+clang++ -DCOUNT=1000000000 -DSUM_CONTROL_1 -DFRAMEWORK_DISPATCH_FORCE_INLINE -I../../ -std=c++11 -O3 ./modular_sum_overhead_small.cpp -o ./modular_sum_overhead_small
+Result: 422814985
+Duration: 12705736000ns
+Operation Time: 12.7057ns
+Time Per Byte: 0.635287ns
+
+SUM_CONTROL_2...
+rm -f ./modular_sum_overhead_small
+g++ (GCC) 4.7.2 20120921 (Red Hat 4.7.2-2)
+g++ -DCOUNT=1000000000 -DSUM_CONTROL_2 -I../../ -std=c++11 -O3 ./modular_sum_overhead_small.cpp -o ./modular_sum_overhead_small
+Result: 422814985
+Duration: 22024173000ns
+Operation Time: 22.0242ns
+Time Per Byte: 1.10121ns
+
+rm -f ./modular_sum_overhead_small
+clang version 3.3 (trunk 172903)
+clang++ -DCOUNT=1000000000 -DSUM_CONTROL_2 -DFRAMEWORK_DISPATCH_FORCE_INLINE -I../../ -std=c++11 -O3 ./modular_sum_overhead_small.cpp -o ./modular_sum_overhead_small
+Result: 422814985
+Duration: 21007009000ns
+Operation Time: 21.007ns
+Time Per Byte: 1.05035ns
+
+SUM_CONTROL_3...
+rm -f ./modular_sum_overhead_small
+g++ (GCC) 4.7.2 20120921 (Red Hat 4.7.2-2)
+g++ -DCOUNT=1000000000 -DSUM_CONTROL_3 -I../../ -std=c++11 -O3 ./modular_sum_overhead_small.cpp -o ./modular_sum_overhead_small
+Result: 422814985
+Duration: 13653916000ns
+Operation Time: 13.6539ns
+Time Per Byte: 0.682696ns
+
+rm -f ./modular_sum_overhead_small
+clang version 3.3 (trunk 172903)
+clang++ -DCOUNT=1000000000 -DSUM_CONTROL_3 -DFRAMEWORK_DISPATCH_FORCE_INLINE -I../../ -std=c++11 -O3 ./modular_sum_overhead_small.cpp -o ./modular_sum_overhead_small
+Result: 422814985
+Duration: 10851978000ns
+Operation Time: 10.852ns
+Time Per Byte: 0.542599ns
+
+SUM_TEST...
+rm -f ./modular_sum_overhead_small
+g++ (GCC) 4.7.2 20120921 (Red Hat 4.7.2-2)
+g++ -DCOUNT=1000000000 -DSUM_TEST -I../../ -std=c++11 -O3 ./modular_sum_overhead_small.cpp -o ./modular_sum_overhead_small
+Result: 422814985
+Duration: 15717196000ns
+Operation Time: 15.7172ns
+Time Per Byte: 0.78586ns
+
+rm -f ./modular_sum_overhead_small
+clang version 3.3 (trunk 172903)
+clang++ -DCOUNT=1000000000 -DSUM_TEST -DFRAMEWORK_DISPATCH_FORCE_INLINE -I../../ -std=c++11 -O3 ./modular_sum_overhead_small.cpp -o ./modular_sum_overhead_small
+Result: 422814985
+Duration: 13709815000ns
+Operation Time: 13.7098ns
+Time Per Byte: 0.685491ns
+

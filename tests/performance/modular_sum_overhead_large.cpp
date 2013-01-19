@@ -5,7 +5,6 @@
 #include <iostream>
 #include <sstream>
 #include <chrono>
-#include <UnitTest++/UnitTest++.h>
 
 #include <framework/serializable.hpp>
 #include <framework/serializable/mutators/little_endian.hpp>
