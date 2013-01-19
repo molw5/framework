@@ -22,8 +22,7 @@ namespace framework
     {
         static_assert(sizeof(T) == 2, "16-bit type expected");
         uint16_t x = static_cast <uint16_t> (in);
-        x = (x >> 8) | (x << 8);
-        return x;
+        return (x >> 8) | (x << 8);
     }
 
     /**
@@ -35,8 +34,7 @@ namespace framework
         static_assert(sizeof(T) == 4, "32-bit type expected");
         uint32_t x = static_cast <uint32_t> (in);
         x = ((x & 0xFF00FF00) >>  8) | ((x & 0x00FF00FF) <<  8);
-        x = ((x & 0xFFFF0000) >> 16) | ((x & 0x0000FFFF) << 16);
-        return x;
+        return (x >> 16) | (x << 16);
     }
 
     /**
@@ -49,8 +47,7 @@ namespace framework
         uint64_t x = static_cast <uint64_t> (in);
         x = ((x & 0xFF00FF00FF00FF00) >>  8) | ((x & 0x00FF00FF00FF00FF) <<  8);
         x = ((x & 0xFFFF0000FFFF0000) >> 16) | ((x & 0x0000FFFF0000FFFF) << 16);
-        x = ((x & 0xFFFFFFFF00000000) >> 32) | ((x & 0x00000000FFFFFFFF) << 32);
-        return x;
+        return (x >> 32) | (x << 32);
     }
 }
 

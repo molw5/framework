@@ -48,6 +48,7 @@ namespace framework
             TO_HOST(uint16_t, FRAMEWORK_BYTESWAP16);
             TO_HOST(uint32_t, FRAMEWORK_BYTESWAP32);
             TO_HOST(uint64_t, FRAMEWORK_BYTESWAP64);
+
 #undef TO_HOST
 
 #if FRAMEWORK_HOST_FLOAT_ENDIANNESS == FRAMEWORK_BIG_ENDIAN
@@ -88,6 +89,7 @@ namespace framework
             TO_HOST(uint16_t, FRAMEWORK_BYTESWAP16);
             TO_HOST(uint32_t, FRAMEWORK_BYTESWAP32);
             TO_HOST(uint64_t, FRAMEWORK_BYTESWAP64);
+
 #undef TO_HOST
 
             // The implementations are symmetric for the current supported endianness

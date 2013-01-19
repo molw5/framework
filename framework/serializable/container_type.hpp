@@ -173,6 +173,7 @@ namespace framework
             typename Specification,
             typename Children,
             bool Default>
+        FRAMEWORK_DISPATCH_TAG
         bool dispatch_write (Input const& in, Output& out,
             container_type <Specification, Children, Default>*,
             typename std::enable_if <Default, void>::type* = nullptr)

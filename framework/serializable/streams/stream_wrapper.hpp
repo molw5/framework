@@ -67,8 +67,7 @@ namespace framework
                 * \brief Write forwarder.
                 */
                 template <typename... Args>
-                auto write (Args&&... args) ->
-                decltype(std::declval <Stream> ().write(args...), bool())
+                bool write (Args&&... args)
                 {
                     auto const parent_this = static_cast <Parent*> (this);
                     if (!parent_this->writepre(args...))
@@ -107,8 +106,7 @@ namespace framework
                 * \brief Read forwarder.
                 */
                 template <typename... Args>
-                auto read (Args&&... args) ->
-                decltype(std::declval <Stream> ().read(args...), bool())
+                bool read (Args&&... args)
                 {
                     auto const parent_this = static_cast <Parent*> (this);
                     if (!parent_this->readpre(args...))

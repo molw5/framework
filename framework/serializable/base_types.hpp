@@ -107,6 +107,18 @@
 #include <type_traits>
 #include <algorithm>
 
+// Intended for experimentation only; should not be used.  Generally the compiler's optimizer should be 
+// allowed to control which dispatch methods to inline.
+#ifdef FRAMEWORK_DISPATCH_FORCE_INLINE
+    #ifdef __GNUC__
+        #define FRAMEWORK_DISPATCH_TAG __attribute__((always_inline))
+    #else
+        #error "Unknown compiler"
+    #endif
+#else
+    #define FRAMEWORK_DISPATCH_TAG
+#endif
+
 namespace framework
 {
     namespace serializable
@@ -144,6 +156,7 @@ namespace framework
         * \brief Arithmetic read overload.
         */
         template <typename Input, typename T>
+        FRAMEWORK_DISPATCH_TAG
         bool custom_read (Input& in, T& out, 
             typename std::enable_if <
                 std::is_arithmetic <T>::value &&
@@ -155,6 +168,7 @@ namespace framework
         * \brief Arithmetic read overload.
         */
         template <typename Input, typename T>
+        FRAMEWORK_DISPATCH_TAG
         bool custom_read (Input& in, T& out,
             typename std::enable_if <
                 std::is_arithmetic <T>::value &&
@@ -166,6 +180,7 @@ namespace framework
         * \brief Arithmetic write overload.
         */
         template <typename Output, typename T>
+        FRAMEWORK_DISPATCH_TAG
         bool custom_write (T const& in, Output& out,
             typename std::enable_if <
                 std::is_arithmetic <T>::value &&
@@ -177,6 +192,7 @@ namespace framework
         * \brief Arithmetic write overload.
         */
         template <typename Output, typename T>
+        FRAMEWORK_DISPATCH_TAG
         bool custom_write (T const& in, Output& out,
             typename std::enable_if <
                 std::is_arithmetic <T>::value &&
@@ -195,6 +211,7 @@ namespace framework
         * \endcode
         */
         template <typename Specification, typename Input, typename Output>
+        FRAMEWORK_DISPATCH_TAG
         bool dispatch_read (Input&& in, Output&& out);
 
         /**
@@ -208,6 +225,7 @@ namespace framework
         * \endcode
         */
         template <typename Specification, typename Input, typename Output>
+        FRAMEWORK_DISPATCH_TAG
         bool dispatch_write (Input&& in, Output&& out);
 
         /**
@@ -217,6 +235,7 @@ namespace framework
         * Transfers control to an appropriate \c custom_read overload, if one exists.
         */
         template <typename Input, typename T>
+        FRAMEWORK_DISPATCH_TAG
         bool dispatch_read (Input& in, T& out, T*,
             decltype(custom_read(in, out), void())* = nullptr);
 
@@ -227,6 +246,7 @@ namespace framework
         * Transfers control to an appropriate \c custom_write overload, if one exists.
         */
         template <typename Output, typename T>
+        FRAMEWORK_DISPATCH_TAG
         bool dispatch_write (T const& in, Output& out, T*,
             decltype(custom_write(in, out), void())* = nullptr);
 
@@ -241,6 +261,7 @@ namespace framework
         * \endcode
         */
         template <typename Input, typename Output>
+        FRAMEWORK_DISPATCH_TAG
         bool read (Input&& in, Output&& out);
 
         /**
@@ -250,6 +271,7 @@ namespace framework
         * Uses the input object's type as it's specification.
         */
         template <typename Input, typename Output>
+        FRAMEWORK_DISPATCH_TAG
         bool write (Input&& in, Output&& out);
     }
 }
