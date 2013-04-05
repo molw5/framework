@@ -12,42 +12,47 @@
 
 #pragma once
 
+#include <framework/common/common_macros.hpp>
+
 namespace framework
 {
     /**
     * \brief Common 16-bit byte swap implementation.
     */
     template <typename T>
-    T bswap16 (T const& in)
+    FRAMEWORK_ALWAYS_INLINE
+    T bswap16 (T&& in)
     {
         static_assert(sizeof(T) == 2, "16-bit type expected");
-        uint16_t x = static_cast <uint16_t> (in);
-        return (x >> 8) | (x << 8);
+        uint16_t const x = static_cast <uint16_t> (in);
+        return static_cast <T> ((x >> 8) | (x << 8));
     }
 
     /**
     * \brief Common 32-bit byte swap implementation.
     */
     template <typename T>
-    T bswap32 (T const& in)
+    FRAMEWORK_ALWAYS_INLINE
+    T bswap32 (T&& in)
     {
         static_assert(sizeof(T) == 4, "32-bit type expected");
         uint32_t x = static_cast <uint32_t> (in);
         x = ((x & 0xFF00FF00) >>  8) | ((x & 0x00FF00FF) <<  8);
-        return (x >> 16) | (x << 16);
+        return static_cast <T> ((x >> 16) | (x << 16));
     }
 
     /**
     * \brief Common 64-bit byte swap implementation.
     */
     template <typename T>
-    T bswap64 (T const& in)
+    FRAMEWORK_ALWAYS_INLINE
+    T bswap64 (T&& in)
     {
         static_assert(sizeof(T) == 8, "64-bit type expected");
         uint64_t x = static_cast <uint64_t> (in);
         x = ((x & 0xFF00FF00FF00FF00) >>  8) | ((x & 0x00FF00FF00FF00FF) <<  8);
         x = ((x & 0xFFFF0000FFFF0000) >> 16) | ((x & 0x0000FFFF0000FFFF) << 16);
-        return (x >> 32) | (x << 32);
+        return static_cast <T> ((x >> 32) | (x << 32));
     }
 }
 

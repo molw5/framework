@@ -1,0 +1,180 @@
+﻿/**
+\page serializable_discussion Discussion
+\tableofcontents
+\section serializable_zero_overhead Zero overhead
+
+One of the design goals of this library was to keep the implementation as close to zero-overhead as possible.  As such, it is worth examining how well this library achieves this goal.  To begin, we will examine the overhead associated with variable access relative to that of a simple C structure.  The following test code was used to isolate these operations to individual functions using GCC's noinline attribute:
+
+\include access_overhead.cpp
+
+Compiling the above using the following invocation of g++:
+
+\code
+g++ -std=c++11 -I./ -O2 ./examples/serializable/access_overhead.cpp
+\endcode
+
+produces the following assembly, organized into test pairs:
+
+\code
+00000000004008b0 <int access_control<s1>(s1&)>:
+4008b0: 8b 07                   mov    (%rdi),%eax
+4008b2: c3                      retq   
+4008b3: 66 2e 0f 1f 84 00 00    nopw   %cs:0x0(%rax,%rax,1)
+4008ba: 00 00 00 
+4008bd: 0f 1f 00                nopl   (%rax)
+
+00000000004008c0 <int access_test<framework: :serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> > >(framework::serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> >&)>:
+4008c0: 8b 07                   mov    (%rdi),%eax
+4008c2: c3                      retq   
+4008c3: 66 2e 0f 1f 84 00 00    nopw   %cs:0x0(%rax,%rax,1)
+4008ca: 00 00 00 
+4008cd: 0f 1f 00                nopl   (%rax)
+
+00000000004008d0 <void assignment_control<s1>(s1&)>: 
+4008d0: c7 07 01 00 00 00       movl   $0x1,(%rdi)
+4008d6: c3                      retq   
+4008d7: 66 0f 1f 84 00 00 00    nopw   0x0(%rax,%rax,1)
+4008de: 00 00 
+
+00000000004008e0 <void assignment_test<framework: :serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> > >(framework::serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> >&)>:
+4008e0: c7 07 01 00 00 00       movl   $0x1,(%rdi)
+4008e6: c3                      retq   
+4008e7: 66 0f 1f 84 00 00 00    nopw   0x0(%rax,%rax,1)
+4008ee: 00 00 
+
+00000000004008f0 <void construction_control<s1>(s1&)>: 
+4008f0: c7 07 d2 04 00 00       movl   $0x4d2,(%rdi)
+4008f6: c3                      retq   
+4008f7: 66 0f 1f 84 00 00 00    nopw   0x0(%rax,%rax,1)
+4008fe: 00 00 
+
+0000000000400900 <void construction_test<framework: :serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> > >(framework::serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> >&)>:
+400900: c7 07 d2 04 00 00       movl   $0x4d2,(%rdi)
+400906: c3                      retq   
+400907: 66 0f 1f 84 00 00 00    nopw   0x0(%rax,%rax,1)
+40090e: 00 00
+\endcode
+
+Note that in each test above produces identical control and test methods.  The results above are hardly exhaustive, however it appears that in the very simple cases presented above GCC's was able to completely optimize out the abstraction, achieving the secondary 'zero-overhead' design goal.
+
+Next, we'll examine serialization operations.  Here, a call to \c read or \c write invokes a series of trivial inline tagged read/write methods defined by the object's type.  As such, the compiler's optimizer is expected to be capable of producing code equivalent to invoking the underlying stream's read/write functions directly on a raw C structure.  Again, examining only the simplest possible test case here:
+
+\include serialization_overhead.cpp
+
+and compiling using the same invocation of g++:
+
+\code
+g++ -std=c++11 -I./ -O2 ./examples/serializable/access_overhead.cpp
+\endcode
+
+produces the following assembly, organized into test pairs:
+
+\code
+0000000000400aa0 <bool write_control<s1, std: :basic_stringstream<char, std::char_traits<char>, std::allocator<char> > >(s1 const&, std::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >&)>:
+400aa0: 48 89 f8                mov    %rdi,%rax
+400aa3: 48 8d 7e 10             lea    0x10(%rsi),%rdi
+400aa7: 48 83 ec 08             sub    $0x8,%rsp
+400aab: ba 04 00 00 00          mov    $0x4,%edx
+400ab0: 48 89 c6                mov    %rax,%rsi
+400ab3: e8 88 fd ff ff          callq  400840 <std::ostream::write(char const*, long)@plt>
+400ab8: 48 8b 10                mov    (%rax),%rdx
+400abb: 48 8b 52 e8             mov    -0x18(%rdx),%rdx
+400abf: f6 44 10 20 05          testb  $0x5,0x20(%rax,%rdx,1)
+400ac4: 0f 94 c0                sete   %al
+400ac7: 48 83 c4 08             add    $0x8,%rsp
+400acb: c3                      retq   
+400acc: 0f 1f 40 00             nopl   0x0(%rax)
+
+0000000000400ad0 <bool write_test<framework: :serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> >, std::basic_stringstream<char, std::char_traits<char>, std::allocator<char> > >(framework::serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> > const&, std::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >&)>:
+400ad0: 48 89 f8                mov    %rdi,%rax
+400ad3: 48 8d 7e 10             lea    0x10(%rsi),%rdi
+400ad7: 48 83 ec 08             sub    $0x8,%rsp
+400adb: ba 04 00 00 00          mov    $0x4,%edx
+400ae0: 48 89 c6                mov    %rax,%rsi
+400ae3: e8 58 fd ff ff          callq  400840 <std::ostream::write(char const*, long)@plt>
+400ae8: 48 8b 10                mov    (%rax),%rdx
+400aeb: 48 8b 52 e8             mov    -0x18(%rdx),%rdx
+400aef: f6 44 10 20 05          testb  $0x5,0x20(%rax,%rdx,1)
+400af4: 0f 94 c0                sete   %al
+400af7: 48 83 c4 08             add    $0x8,%rsp
+400afb: c3                      retq   
+400afc: 0f 1f 40 00             nopl   0x0(%rax)
+
+0000000000400b00 <bool read_control<std: :basic_stringstream<char, std::char_traits<char>, std::allocator<char> >, s1>(std::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >&, s1&)>:
+400b00: 53                      push   %rbx
+400b01: ba 04 00 00 00          mov    $0x4,%edx
+400b06: 48 89 f3                mov    %rsi,%rbx
+400b09: 48 83 ec 10             sub    $0x10,%rsp
+400b0d: 48 89 e6                mov    %rsp,%rsi
+400b10: e8 0b fd ff ff          callq  400820 <std::istream::read(char*, long)@plt>
+400b15: 48 89 c2                mov    %rax,%rdx
+400b18: 48 8b 00                mov    (%rax),%rax
+400b1b: 48 8b 48 e8             mov    -0x18(%rax),%rcx
+400b1f: 31 c0                   xor    %eax,%eax
+400b21: f6 44 0a 20 05          testb  $0x5,0x20(%rdx,%rcx,1)
+400b26: 75 0a                   jne    400b32 <bool read_control<std::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >, s1>(std::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >&, s1&)+0x32>
+400b28: 8b 04 24                mov    (%rsp),%eax
+400b2b: 89 03                   mov    %eax,(%rbx)
+400b2d: b8 01 00 00 00          mov    $0x1,%eax
+400b32: 48 83 c4 10             add    $0x10,%rsp
+400b36: 5b                      pop    %rbx
+400b37: c3                      retq   
+400b38: 0f 1f 84 00 00 00 00    nopl   0x0(%rax,%rax,1)
+400b3f: 00 
+
+0000000000400b40 <bool read_test<std: :basic_stringstream<char, std::char_traits<char>, std::allocator<char> >, framework::serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> > >(std::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >&, framework::serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> >&)>:
+400b40: 53                      push   %rbx
+400b41: 48 89 f3                mov    %rsi,%rbx
+400b44: ba 04 00 00 00          mov    $0x4,%edx
+400b49: 48 83 ec 10             sub    $0x10,%rsp
+400b4d: 48 8d 74 24 0c          lea    0xc(%rsp),%rsi
+400b52: e8 c9 fc ff ff          callq  400820 <std::istream::read(char*, long)@plt>
+400b57: 48 89 c2                mov    %rax,%rdx
+400b5a: 48 8b 00                mov    (%rax),%rax
+400b5d: 48 8b 48 e8             mov    -0x18(%rax),%rcx
+400b61: 31 c0                   xor    %eax,%eax
+400b63: f6 44 0a 20 05          testb  $0x5,0x20(%rdx,%rcx,1)
+400b68: 75 0b                   jne    400b75 <bool read_test<std::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >, framework::serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> > >(std::basic_stringstream<char, std::char_traits<char>, std::allocator<char> >&, framework::serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> >&)+0x35>
+400b6a: 8b 44 24 0c             mov    0xc(%rsp),%eax
+400b6e: 89 03                   mov    %eax,(%rbx)
+400b70: b8 01 00 00 00          mov    $0x1,%eax
+400b75: 48 83 c4 10             add    $0x10,%rsp
+400b79: 5b                      pop    %rbx
+400b7a: c3                      retq   
+400b7b: 0f 1f 44 00 00          nopl   0x0(%rax,%rax,1)
+\endcode
+
+Once again, aside from trivial differences the assembly produced for control and tests cases is identical; our zero overhead requirement is again satisfied.
+
+Finally, we examine the default comparison operators.  Given the results in the preceding test the results here are not particularly interesting.  The compiler is again expected to be capable to inlining the comparison operators used here to produce code equivalent to a similar operation involving a raw C structure:
+
+\include comparison_overhead.cpp
+
+Again, compiling the above using the same invocation of g++:
+
+\code
+g++ -std=c++11 -I./ -O2 ./examples/serializable/access_overhead.cpp
+\endcode
+
+produces the following assembly, organized into test pairs:
+
+\code
+00000000004007a0 <bool compare_control<s1>(s1 const&, s1 const&)>: 
+4007a0: 8b 06                   mov    (%rsi),%eax
+4007a2: 39 07                   cmp    %eax,(%rdi)
+4007a4: 0f 9c c0                setl   %al
+4007a7: c3                      retq   
+4007a8: 0f 1f 84 00 00 00 00    nopl   0x0(%rax,%rax,1)
+4007af: 00 
+
+00000000004007b0 <bool compare_test<framework: :serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> > >(framework::serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> > const&, framework::serializable::inline_object<framework::serializable::value<framework::type_string<(char)120>, int, framework::serializable::value_implementation> > const&)>:
+4007b0: 8b 06                   mov    (%rsi),%eax
+4007b2: 39 07                   cmp    %eax,(%rdi)
+4007b4: 0f 9c c0                setl   %al
+4007b7: c3                      retq   
+4007b8: 0f 1f 84 00 00 00 00    nopl   0x0(%rax,%rax,1)
+4007bf: 00
+\endcode
+
+That is, our zero-overhead requirement is again satisfied in the above test cases as expected.
+*/

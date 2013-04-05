@@ -1,8 +1,9 @@
 // Copyright (C) 2012 iwg molw5
 // For conditions of distribution and use, see copyright notice in COPYING
 
-#include <framework/serializable/value_type.hpp>
 #include <framework/common/common_macros.hpp>
+#include <framework/serializable/value_type.hpp>
+#include <framework/serializable/container_type.hpp>
 
 namespace framework
 {
@@ -107,30 +108,6 @@ namespace framework
             {
                 using type = merge_packs <extract_values <Children, Path>...>;
             };
-
-            template <typename Derived, bool Default>
-            struct marshal;
-
-            template <typename Derived>
-            struct marshal <Derived, false>
-            {
-            };
-
-            template <typename Derived>
-            struct marshal <Derived, true>
-            {
-                template <typename Input>
-                friend bool custom_read (Input& in, Derived& out)
-                {
-                    return dispatch_read <object_specification <Derived>> (in, out);
-                }
-
-                template <typename Output>
-                friend bool custom_write (Derived const& in, Output& out)
-                {
-                    return dispatch_write <object_specification <Derived>> (in, out);
-                }
-            };
         }
 
         template <
@@ -147,8 +124,7 @@ namespace framework
                 pack_container <Constructed...>,
                 pack_container <Visible...>,
                 Default> 
-            : public detail::marshal <Derived, Default>,
-              public value_implementation <Inherited, Derived>...
+            : public value_implementation <Inherited, Derived>...
         {
 // GCC bug workaround - www.open-std.org/jtc1/sc22/wg21/docs/cwg_defects.html#580
 #if MAX_GNUC_VERSION(4, 8, 0)
@@ -188,13 +164,22 @@ namespace framework
                     Specification,
                     pack_container <Inherited...>,
                     pack_container <Constructed...>,
-                    pack_container <Visible...>>;
+                    pack_container <Visible...>,
+                    Default>;
             
             protected:
                 ~serializable_implementation () = default;
                 serializable_implementation () = default;
+                serializable_implementation (serializable_implementation const&) = default;
+                serializable_implementation (serializable_implementation&&) = default;
+                serializable_base& operator= (serializable_implementation const&) = default;
+                serializable_base& operator= (serializable_implementation&&) = default;
 
-                template <typename... Args>
+                template <typename... Args, typename = 
+                    typename std::enable_if <
+                        sizeof...(Args) == sizeof...(Constructed),
+                        void
+                    >::type>
                 serializable_implementation (Args&&... args)
                     : value_implementation <Constructed, Derived> (std::forward <Args> (args))...
                 {

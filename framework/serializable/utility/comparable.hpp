@@ -129,6 +129,7 @@ namespace framework
             /**
             * \brief Less than operator.
             */
+            FRAMEWORK_ALWAYS_INLINE
             friend bool operator< (Parent const& lhs, Parent const& rhs)
             {
                 return less(lhs, rhs);
@@ -137,6 +138,7 @@ namespace framework
             /**
             * \brief Greater than operator.
             */
+            FRAMEWORK_ALWAYS_INLINE
             friend bool operator> (Parent const& lhs, Parent const& rhs)
             {
                 return greater(lhs, rhs);
@@ -145,6 +147,7 @@ namespace framework
             /**
             * \brief Less than or equal to operator.
             */
+            FRAMEWORK_ALWAYS_INLINE
             friend bool operator<= (Parent const& lhs, Parent const& rhs)
             {
                 return less_or_equal(lhs, rhs);
@@ -153,6 +156,7 @@ namespace framework
             /**
             * \brief Greater than or equal to operator.
             */
+            FRAMEWORK_ALWAYS_INLINE
             friend bool operator>= (Parent const& lhs, Parent const& rhs)
             {
                 return greater_or_equal(lhs, rhs);
@@ -161,6 +165,7 @@ namespace framework
             /**
             * \brief Equal to operator.
             */
+            FRAMEWORK_ALWAYS_INLINE
             friend bool operator== (Parent const& lhs, Parent const& rhs)
             {
                 return equal(lhs, rhs);
@@ -169,6 +174,7 @@ namespace framework
             /**
             * \brief Not equal to operator.
             */
+            FRAMEWORK_ALWAYS_INLINE
             friend bool operator!= (Parent const& lhs, Parent const& rhs)
             {
                 return not_equal(lhs, rhs);

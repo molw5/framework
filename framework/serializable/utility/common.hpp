@@ -22,6 +22,7 @@ namespace framework
         * \brief Get.
         */
         template <typename Name, typename Object, typename... Args>
+        FRAMEWORK_ALWAYS_INLINE
         auto get (Object const& t, Args&&... args) -> decltype(interface <Name> (t).get(std::forward <Args> (args)...))
         {
             return interface <Name> (t).get(std::forward <Args> (args)...);
@@ -31,6 +32,7 @@ namespace framework
         * \brief Set.
         */
         template <typename Name, typename Object, typename... Args>
+        FRAMEWORK_ALWAYS_INLINE
         auto set (Object& t, Args&&... args) -> decltype(interface <Name> (t).set(std::forward <Args> (args)...))
         {
             return interface <Name> (t).set(std::forward <Args> (args)...);
@@ -40,6 +42,7 @@ namespace framework
         * \brief Check.
         */
         template <typename Name, typename Object, typename... Args>
+        FRAMEWORK_ALWAYS_INLINE
         auto check (Object const& t, Args&&... args) -> decltype(interface <Name> (t).check(std::forward <Args> (args)...))
         {
             return interface <Name> (t).check(std::forward <Args> (args)...);
@@ -49,6 +52,7 @@ namespace framework
         * \brief Clear.
         */
         template <typename Name, typename Object, typename... Args>
+        FRAMEWORK_ALWAYS_INLINE
         auto clear (Object& t, Args&&... args) -> decltype(interface <Name> (t).clear(std::forward <Args> (args)...))
         {
             return interface <Name> (t).clear(std::forward <Args> (args)...);

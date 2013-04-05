@@ -14,6 +14,8 @@
 
 #include <type_traits>
 
+#include <framework/common/common_macros.hpp>
+
 namespace framework
 {
     namespace serializable

@@ -27,7 +27,8 @@
 #include <boost/preprocessor/punctuation/comma_if.hpp>
 #include <boost/preprocessor/iteration/local.hpp>
 
-#include <framework/common/containers/value_container.hpp>
+#include <framework/common/pack_container.hpp>
+#include <framework/common/common_macros.hpp>
 
 #ifndef FRAMEWORK_VARIADIC_SWITCH_LIMIT
     #define FRAMEWORK_VARIADIC_SWITCH_LIMIT 20
@@ -58,7 +59,7 @@ namespace framework
     * \c variadic_switch_fallthrough:
     *
     * \code
-    * variadic_switch_fallthrough <value_list <std::size_t, 0, 1, 2, 3, 4>> (i, f);
+    * variadic_switch_fallthrough <make_indices <5>> (f, i);
     * \endcode
     *
     * is equivalent to the following switch statement:
@@ -84,18 +85,13 @@ namespace framework
     * \param handler handler functor
     * \param args functor arguments
     */
-    template <
-        typename CaseList,
-        typename Handler, 
-        typename... Args>
-    void variadic_switch_fallthrough (
-        typename CaseList::type const& index, 
-        Handler&& handler, 
-        Args&&... args)
+    template <typename CaseList, typename Handler, typename Index, typename... Args>
+    FRAMEWORK_ALWAYS_INLINE
+    void variadic_switch_fallthrough (Handler&& handler, Index&& index, Args&&... args)
     {
         detail::variadic_switch_fallthrough_impl <CaseList>::run(
-            index,
             std::forward <Handler> (handler),
+            std::forward <Index> (index),
             std::forward <Args> (args)...);
     }
 }

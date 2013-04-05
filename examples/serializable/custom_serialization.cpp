@@ -20,53 +20,50 @@ struct s
 };
 
 template <typename Input>
-bool custom_read (Input& in, s& out)
+bool read_dispatch (s*, Input&& in, s& out)
 {
-    if (!in.read(reinterpret_cast <char*> (&out), sizeof(out)))
-        return false;
-
-    return true;
+    using framework::serializable::stream_read;
+    return stream_read(in, reinterpret_cast <char*> (&out), sizeof(out));
 }
 
 template <typename Output>
-bool custom_write (s const& in, Output& out)
+bool write_dispatch (s*, s const& in, Output&& out)
 {
-    if (!out.write(reinterpret_cast <char const*> (&in), sizeof(in)))
-        return false;
-
-    return true;
+    using framework::serializable::stream_write;
+    return stream_write(out, reinterpret_cast <char const*> (&in), sizeof(in));
 }
 
-namespace framework
-{
-    namespace serializable
-    {
-        // Specialize the serialization of a mutator type
-        template <typename Input, typename Size>
-        bool read (Input& in, type_extractor <stl_vector <Size, s>>& out, stl_vector <Size, s>*)
+namespace framework{ 
+    namespace serializable{
+        template <
+            typename Size,
+            typename Input,
+            typename Output>
+        bool read_dispatch (
+            stl_vector <Size, s>*,
+            Input&& in, Output&& out)
         {
             type_extractor <Size> size;
-            if (!read <Size> (in, size))
+            if (!dispatch_read <Size> (in, size))
                 return false;
 
             out.resize(size);
-            if (!in.read(reinterpret_cast <char*> (&out[0]), out.size()*sizeof(out[0])))
-                return false;
-
-            return true;
+            return stream_read(in, reinterpret_cast <char*> (&out[0]), out.size()*sizeof(out[0]));
         }
-    
-        template <typename Output, typename Size>
-        bool write (type_extractor <stl_vector <Size, s>> const& in, Output& out, stl_vector <Size, s>*)
+
+        template <
+            typename Size,
+            typename Input,
+            typename Output>
+        bool write_dispatch (
+            stl_vector <Size, s>*,
+            Input&& in, Output&& out)
         {
             type_extractor <Size> const& size = in.size();
-            if (!write <Size> (size, out))
+            if (!dispatch_write <Size> (size, out))
                 return false;
 
-            if (!out.write(reinterpret_cast <char const*> (&in[0]), in.size()*sizeof(in[0])))
-                return false;
-
-            return true;
+            return stream_write(out, reinterpret_cast <char const*> (&in[0]), in.size()*sizeof(in[0]));
         }
     }
 }

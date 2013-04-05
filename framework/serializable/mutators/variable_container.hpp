@@ -51,18 +51,16 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Size, 
             typename Value, 
             typename Container,
-            bool Continuous>
-        bool dispatch_read (Input& in, Output& out, 
+            bool Continuous,
+            typename Input,
+            typename Output>
+        FRAMEWORK_ALWAYS_INLINE
+        bool read_dispatch (
             variable_container <Size, Value, Container, Continuous>*,
-            typename std::enable_if <
-                std::is_same <Output, Container>::value,
-                void
-            >::type* = nullptr)
+            Input& in, Output& out)
         {
             type_extractor <Size> size;
             if (!dispatch_read <Size> (in, size))
@@ -85,31 +83,33 @@ namespace framework
 
         /**
         * \headerfile variable_container.hpp <framework/serializable/mutators/variable_container.hpp>
-        * \brief Block write overload.
+        * \brief Write overload.
+        *
+        * Writes the container to an output stream as a size delimited list.
+        *
         * \param in input stream
         * \param out output container
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Size, 
             typename Value, 
-            typename Container>
-        bool dispatch_write (Input const& in, Output& out, 
-            variable_container <Size, Value, Container, true>*,
-            typename std::enable_if <
-                std::is_same <Input, Container>::value &&
-                std::is_arithmetic <Value>::value,
-                void
-            >::type* = nullptr)
+            typename Container,
+            bool Continuous,
+            typename Input,
+            typename Output>
+        FRAMEWORK_ALWAYS_INLINE
+        bool write_dispatch (
+            variable_container <Size, Value, Container, Continuous>*,
+            Input const& in, Output& out)
         {
             type_extractor <Size> const& size = std::distance(in.begin(), in.end());
             if (!dispatch_write <Size> (size, out))
                 return false;
 
-            if (!out.write(reinterpret_cast <char const*> (&in[0]), sizeof(in[0])*in.size()))
-                return false;
+            for (auto const& x : in)
+                if (!dispatch_write <Value> (static_cast <type_extractor <Value> const&> (x), out))
+                    return false;
 
             return true;
         }
@@ -122,63 +122,69 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Size, 
             typename Value, 
             typename Container,
-            bool Default>
-        bool dispatch_read (Input& in, Output& out, 
+            typename Input,
+            typename Output>
+        FRAMEWORK_ALWAYS_INLINE
+        typename std::enable_if <
+            std::is_same <Value, type_extractor <Value>>::value &&
+            std::is_scalar <Value>::value,
+            bool
+        >::type read_dispatch (
             variable_container <Size, Value, Container, true>*,
-            typename std::enable_if <
-                std::is_same <Output, Container>::value &&
-                std::is_arithmetic <Value>::value,
-                void
-            >::type* = nullptr)
+            Input& in, Output& out)
         {
             type_extractor <Size> size;
             if (!dispatch_read <Size> (in, size))
                 return false;
 
-            Container result(size);
-            if (!in.read(reinterpret_cast <char*> (&result[0]), sizeof(result[0])*result.size()))
+#if false
+            Container result;
+            result.resize(size);
+            if (!stream_read(in, &out[0], sizeof(out[0])*size))
                 return false;
-
+            
             out = std::move(result);
             return true;
+#else
+            out.resize(size);
+            if (!stream_read(in, &out[0], sizeof(out[0])*size))
+                return false;
+
+            return true;
+#endif
         }
 
         /**
         * \headerfile variable_container.hpp <framework/serializable/mutators/variable_container.hpp>
-        * \brief Write overload.
-        *
-        * Writes the container to an output stream as a size delimited list.
-        *
+        * \brief Block write overload.
         * \param in input stream
         * \param out output container
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Size, 
             typename Value, 
             typename Container,
-            bool Default>
-        bool dispatch_write (Input const& in, Output& out, 
-            variable_container <Size, Value, Container, Default>*,
-            typename std::enable_if <
-                std::is_same <Input, Container>::value,
-                void
-            >::type* = nullptr)
+            typename Input,
+            typename Output>
+        FRAMEWORK_ALWAYS_INLINE
+        typename std::enable_if <
+            std::is_same <Value, type_extractor <Value>>::value &&
+            std::is_scalar <Value>::value,
+            bool
+        >::type write_dispatch (
+            variable_container <Size, Value, Container, true>*,
+            Input const& in, Output& out)
         {
             type_extractor <Size> const& size = std::distance(in.begin(), in.end());
             if (!dispatch_write <Size> (size, out))
                 return false;
 
-            for (auto const& x : in)
-                if (!dispatch_write <Value> (static_cast <type_extractor <Value> const&> (x), out))
-                    return false;
+            if (!stream_write(out, &in[0], sizeof(in[0])*in.size()))
+                return false;
 
             return true;
         }

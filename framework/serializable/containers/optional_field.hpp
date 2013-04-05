@@ -12,9 +12,6 @@
 
 #pragma once
 
-#include <sstream>
-
-#include <framework/serializable/streams/stream_wrapper.hpp>
 #include <framework/serializable/base_types.hpp>
 
 namespace framework
@@ -22,84 +19,91 @@ namespace framework
     namespace serializable
     {
         /**
-        * \headerfile optional_field.hpp <framework/serializable/containers/optional_field.hpp>
-        * \brief Optional field input stream wrapper.
+        * \brief Flags frame.
+        *
+        * Used to write the current flags field state to the output stream.
         */
-        template <typename Stream, typename Type>
-        class optional_field_input_wrapper : private stream_wrapper <optional_field_input_wrapper <Stream, Type>, Stream>
+        template <typename Specification>
+        class output_flags_frame
         {
+            template <typename Output>
+            friend bool write_dispatch (
+                output_flags_frame <Specification>*,
+                output_flags_frame <Specification> const& in, Output& out)
+            {
+                return dispatch_write <Specification> (in.p_iFlags, out);
+            }
+
             private:
-                using base = stream_wrapper <optional_field_input_wrapper <Stream, Type>, Stream>;
-                friend base;
+                using type = type_extractor <Specification>;
 
             public:
-                /**
-                * \brief Wrapper constructor.
-                *
-                * \warn
-                * The lifetime of stream and flags must exceed this class; behaviour when this
-                * condition is not met is undefined.
-                */
-                optional_field_input_wrapper (Stream& stream, Type const& flags)
-                    : base(stream),
-                      p_iFlags(flags)
-                {
-                }
-                
-                /**
-                * \brief Check flag.
-                */
-                bool checkFlag (Type const& flag) const 
-                { 
-                    return p_iFlags & flag; 
-                }
-
-                /**
-                * \brief Read forwarders.
-                */
-                using base::read;
-
-            private:
-                Type const& p_iFlags;
-        };
-
-        /**
-        * \headerfile optional_field.hpp <framework/serializable/containers/optional_field.hpp>
-        * \brief Optional field output stream wrapper.
-        */
-        template <typename Stream, typename Type>
-        class optional_field_output_wrapper : private stream_wrapper <optional_field_output_wrapper <Stream, Type>, Stream>
-        {
-            private:
-                using base = stream_wrapper <optional_field_output_wrapper <Stream, Type>, Stream>;
-                friend base;
-
-            public:
-                /**
-                * \brief Wrapper constructor.
-                *
-                * \warn
-                * The lifetime of stream and flags must exceed this class; behaviour when this
-                * condition is not met is undefined.
-                */
-                optional_field_output_wrapper (Stream& stream, Type& flags)
-                    : base(stream),
-                      p_iFlags(flags)
-                {
-                }
-            
                 /**
                 * \brief Set flag.
                 */
-                void setFlag (Type const& flag) { p_iFlags |= flag; }
+                void set_flag (type const flag)
+                {
+                    p_iFlags |= flag;
+                }
 
                 /**
-                * \brief Write forwarders.
+                * \brief Write bytes.
                 */
-                using base::write;
+                bool write (char const*, std::size_t)
+                {
+                    return true;
+                }
 
             private:
-                Type& p_iFlags;
+                type p_iFlags {};
+        };
+
+        template <typename Specification, typename Stream>
+        class input_flags_frame : std::reference_wrapper <Stream>
+        {
+            private:
+                using type = type_extractor <Specification>;
+
+            public:
+                /**
+                * \brief Frame constructor.
+                * \warn
+                * The lifetime of stream and flags must exceed this class; behaviour when this
+                * condition is not met is undefined.
+                */
+                input_flags_frame (Stream& stream, type flags)
+                    : std::reference_wrapper <Stream> (stream),
+                      p_iFlags(flags)
+                {
+                }
+
+                /**
+                * \brief Check flag.
+                */
+                bool check_flag (type const flag) const
+                {
+                    return p_iFlags & flag;
+                }
+
+                /**
+                * \brief Read bytes.
+                */
+                template <std::size_t N>
+                bool read (char* s)
+                {
+                    return stream_read <N> (this->get(), s);
+                }
+
+                /**
+                * \brief Read bytes.
+                */
+                bool read (char* s, std::size_t n)
+                {
+                    return stream_read(this->get(), s, n);
+                }
+
+            private:
+                type const p_iFlags;
         };
 
         /**
@@ -122,20 +126,20 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Type, 
-            typename... Specification>
-        bool dispatch_read (Input& in, Output& out, optional_field <Type, Specification...>*)
+            typename... Specification,
+            typename Input,
+            typename Output>
+        bool read_dispatch (
+            optional_field <Type, Specification...>*,
+            Input& in, Output& out)
         {
-            using value_type = type_extractor <Type>;
-
-            value_type value;
-            if (!dispatch_read <Type> (in, value))
+            type_extractor <Type> flags;
+            if (!dispatch_read <Type> (in, flags))
                 return false;
 
-            optional_field_input_wrapper <Input, value_type> wrapper{in, value};
-            return dispatch_read <alias <Specification...>> (wrapper, out);
+            input_flags_frame <Type, Input> frame {in, flags};
+            return dispatch_read <alias <Specification...>> (frame, out);
         }
 
         /**
@@ -146,26 +150,25 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Type, 
-            typename... Specification>
-        bool dispatch_write (Input const& in, Output& out, optional_field <Type, Specification...>*)
+            typename... Specification,
+            typename Input,
+            typename Output>
+        bool write_dispatch (
+            optional_field <Type, Specification...>*,
+            Input const& in, Output& out)
         {
-            using value_type = type_extractor <Type>;
-
-            value_type value{0};
-            std::stringstream ss;
-
-            optional_field_output_wrapper <decltype(ss), value_type> wrapper{ss, value};
-            if (!dispatch_write <alias <Specification...>> (in, wrapper))
+            // Write the object state to the flags stream
+            output_flags_frame <Type> frame;
+            if (!dispatch_write <alias <Specification...>> (in, frame))
                 return false;
 
-            if (!dispatch_write <Type> (value, out))
+            // Write the flags stream to the output stream
+            if (!write(frame, out))
                 return false;
 
-            auto const& buffer = ss.str();
-            if (!out.write(&buffer[0], buffer.size()))
+            // Write the object state to the output stream
+            if (!dispatch_write <alias <Specification...>> (in, out))
                 return false;
 
             return true;

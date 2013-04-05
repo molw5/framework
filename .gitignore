@@ -22,8 +22,15 @@ test_big
 
 # Doxygen output
 html/
-latex/
 
 # Examples
 examples/*/*
 !examples/*/*.cpp
+
+# Performance
+performance/*
+!performance/*.cpp
+
+# Benchmarks
+benchmarks/*
+!benchmarks/*.cpp

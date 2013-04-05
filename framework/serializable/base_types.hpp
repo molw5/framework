@@ -17,8 +17,8 @@
 * or through the following equivalent syntax:
 *
 * \code
-* dispatch_read(in, out, (Specification*)nullptr);
-* dispatch_write(in, out, (Specification*)nullptr);
+* read_dispatch((Specification*)nullptr, in, out);
+* write_dispatch((Specification*)nullptr, in, out);
 * \endcode
 * 
 * It is important to note that the Specification provided to the above is used exclusively to define
@@ -66,37 +66,6 @@
 * dispatch_write <Header> (s1, chk);
 * \endcode
 *
-* Note that template partial specialization was originally used here to discriminate between types - 
-* this solution required great care in the placement of new definitions to avoid violating the one
-* definition rule.  This effectively eliminated what was seen as one of the stronger side effects
-* of this sort of serialization - the ability to incrementally improve marshalling functions based
-* on the profiled performance of an application.  For example, consider the following type:
-*
-* \code
-* ...
-* value <NAME("x"), stl_vector <little_endian <uint32_t>, little_endian <uint32_t>>>,
-* ...
-* \encode
-*
-* For a sufficiently large vector, "x" could conceivably dominate the serialization time in a
-* particular application as each data member is marshalled individually.  With tagged dispatch
-* the solution is trivial; add an overload:
-*
-* \code
-* template <typename Input, typename Output, typename Size>
-* bool dispatch_read (Input& in, Output& out, stl_vector <Size, little_endian <uint32_t>>*)
-* {
-*     // apply optimizations based on the endianness of the host
-*     ...
-* }
-* \endcode
-*
-* The above overload will now take precedence over the default stl_vector read definition in any
-* translation unit where we define the above; the two definitions may coexist within an application.  
-* Contrast this to template partial specialization where a solution similar to the above may still be 
-* used with the caveat that it \em must always take precedence.  In practice, this produces highly
-* fragile code and effectively eliminates this optimization path.
-*
 * \copyright
 * Copyright &copy; 2012 iwg molw5<br>
 * For conditions of distribution and use, see copyright notice in COPYING
@@ -107,128 +76,124 @@
 #include <type_traits>
 #include <algorithm>
 
+#include <framework/common/common_macros.hpp>
+
 namespace framework
 {
     namespace serializable
     {
-        namespace detail
-        {
-            template <typename Input, std::size_t N, typename Enabler = void>
-            struct read_count_exists_impl;
-
-            template <typename Output, std::size_t N, typename Enabler = void>
-            struct write_count_exists_impl;
-        }
-
-        /**
-        * Determines if a read method is present in Input with a signature compatible with the following:
-        *
-        * \code
-        * std::declval <Input> ().read <N> (std::declval <char*> ())
-        * \endcode
-        */
-        template <typename Input, std::size_t N>
-        using read_count_exists = typename detail::read_count_exists_impl <Input, N>::type;
-
-        /**
-        * Determines if a write method is present in Output with a signature compatible with the following:
-        *
-        * \code
-        * std::declval <Output> ().read <N> (std::declval <char const*> ())
-        * \endcode
-        */
-        template <typename Output, std::size_t N>
-        using write_count_exists= typename detail::write_count_exists_impl <Output, N>::type;
+        template <typename T>
+        using reference_base = typename std::remove_cv <typename std::remove_reference <T>::type>::type;
 
         /**
         * \brief Arithmetic read overload.
         */
         template <typename Input, typename T>
-        bool custom_read (Input& in, T& out, 
-            typename std::enable_if <
-                std::is_arithmetic <T>::value &&
-                read_count_exists <Input, sizeof(T)>::value,
-                void
-            >::type* = nullptr);
-
-        /**
-        * \brief Arithmetic read overload.
-        */
-        template <typename Input, typename T>
-        bool custom_read (Input& in, T& out,
-            typename std::enable_if <
-                std::is_arithmetic <T>::value &&
-                !read_count_exists <Input, sizeof(T)>::value,
-                void
-            >::type* = nullptr);
+        typename std::enable_if <
+            std::is_arithmetic <T>::value,
+            bool
+        >::type read_dispatch (T*, Input& in, T& out);
 
         /**
         * \brief Arithmetic write overload.
         */
         template <typename Output, typename T>
-        bool custom_write (T const& in, Output& out,
-            typename std::enable_if <
-                std::is_arithmetic <T>::value &&
-                write_count_exists <Output, sizeof(T)>::value,
-                void
-            >::type* = nullptr);
-
-        /**
-        * \brief Arithmetic write overload.
-        */
-        template <typename Output, typename T>
-        bool custom_write (T const& in, Output& out,
-            typename std::enable_if <
-                std::is_arithmetic <T>::value &&
-                !write_count_exists <Output, sizeof(T)>::value,
-                void
-            >::type* = nullptr);
+        typename std::enable_if <
+            std::is_arithmetic <T>::value,
+            bool
+        >::type write_dispatch (T*, T in, Output& out);
 
         /**
         * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
         * \brief Dispatched read forwarder.
         *
-        * Uses the explicitly specified specification to serialize the object, equivalent to:
-        *
-        * \code
-        * dispatch_read(in, out, (Specification*)nullptr);
-        * \endcode
+        * Uses the explicitly specified specification to serialize the object.
         */
-        template <typename Specification, typename Input, typename Output>
-        bool dispatch_read (Input&& in, Output&& out);
-
+        template <typename Specification, typename... Args>
+        FRAMEWORK_ALWAYS_INLINE
+        auto dispatch_read (Args&&... args) ->
+        decltype(read_dispatch(
+            static_cast <Specification*> (nullptr), 
+            std::forward <Args> (args)...))
+        {
+            return read_dispatch(
+                static_cast <Specification*> (nullptr),
+                std::forward <Args> (args)...);
+        }
+        
         /**
         * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
         * \brief Dispatched write forwarder.
         *
-        * Uses the explicitly specified specification to serialize the object, equivalent to:
+        * Uses the explicitly specified specification to serialize the object.
+        */
+        template <typename Specification, typename... Args>
+        FRAMEWORK_ALWAYS_INLINE
+        auto dispatch_write (Args&&... args) ->
+        decltype(write_dispatch(
+            static_cast <Specification*> (nullptr),
+            std::forward <Args> (args)...))
+        {
+            return write_dispatch(
+                static_cast <Specification*> (nullptr),
+                std::forward <Args> (args)...);
+        }
+
+        /**
+        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
+        * \brief Stream read forwarder.
+        *
+        * Used to forward a fixed-byte read call to the underlying stream object.  Equivalent to one
+        * of the following two calls, in order of precedence:
         *
         * \code
-        * dispatch_write(in, out, (Specification*)nullptr);
+        * s.read <N> (reinterpret_cast <char*> (out));
+        * s.read(reinterpret_cast <char*> (out), N);
         * \endcode
         */
-        template <typename Specification, typename Input, typename Output>
-        bool dispatch_write (Input&& in, Output&& out);
+        template <std::size_t N, typename Stream>
+        bool stream_read (Stream&& stream, void* s);
 
         /**
         * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
-        * \brief Dispatched read terminator.
+        * \brief Stream read forwarder.
         *
-        * Transfers control to an appropriate \c custom_read overload, if one exists.
+        * Used to forward a fixed-byte read call to the underlying stream object.  Equivalent to the following:
+        *
+        * \code
+        * s.read(reinterpret_cast <char*> (out), N);
+        * \endcode
         */
-        template <typename Input, typename T>
-        bool dispatch_read (Input& in, T& out, T*,
-            decltype(custom_read(in, out), void())* = nullptr);
+        template <typename Stream>
+        bool stream_read (Stream&& stream, void* s, std::size_t n);
 
         /**
         * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
-        * \brief Dispatched write terminator.
+        * \brief Stream write forwarder.
         *
-        * Transfers control to an appropriate \c custom_write overload, if one exists.
+        * Used to forward a fixed-byte write call to the underlying stream object.  Equivalent to one
+        * of the following two calls, in order of precedence:
+        *
+        * \code
+        * s.write <N> (reinterpret_cast <char const*> (out));
+        * s.write(reinterpret_cast <char const*> (out), N);
+        * \endcode
         */
-        template <typename Output, typename T>
-        bool dispatch_write (T const& in, Output& out, T*,
-            decltype(custom_write(in, out), void())* = nullptr);
+        template <std::size_t N, typename Stream>
+        bool stream_write (Stream&& stream, void const* s);
+
+        /**
+        * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
+        * \brief Stream write forwarder.
+        *
+        * Used to forward a fixed-byte write call to the underlying stream object.  Equivalent to the following:
+        *
+        * \code
+        * s.write <N> (reinterpret_cast <char const*> (out));
+        * \endcode
+        */
+        template <typename Stream>
+        bool stream_write (Stream&& stream, void const* s, std::size_t n);
 
         /**
         * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
@@ -241,7 +206,16 @@ namespace framework
         * \endcode
         */
         template <typename Input, typename Output>
-        bool read (Input&& in, Output&& out);
+        FRAMEWORK_ALWAYS_INLINE
+        auto read (Input&& in, Output&& out) ->
+        decltype(dispatch_read <reference_base <Output>> (
+            std::forward <Input> (in),
+            std::forward <Output> (out)))
+        {
+            return dispatch_read <reference_base <Output>> (
+                std::forward <Input> (in),
+                std::forward <Output> (out));
+        }
 
         /**
         * \headerfile base_types.hpp <framework/serializable/containers/base_types.hpp>
@@ -250,7 +224,16 @@ namespace framework
         * Uses the input object's type as it's specification.
         */
         template <typename Input, typename Output>
-        bool write (Input&& in, Output&& out);
+        FRAMEWORK_ALWAYS_INLINE
+        auto write (Input&& in, Output&& out) ->
+        decltype(dispatch_write <reference_base <Input>> (
+            std::forward <Input> (in),
+            std::forward <Output> (out)))
+        {
+            return dispatch_write <reference_base <Input>> (
+                std::forward <Input> (in),
+                std::forward <Output> (out));
+        }
     }
 }
 

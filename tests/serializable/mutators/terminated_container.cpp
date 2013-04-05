@@ -9,7 +9,7 @@
 
 #include <framework/serializable/inline_object.hpp>
 #include <framework/serializable/containers/value.hpp>
-#include <framework/serializable/mutators/big_endian.hpp>
+#include <framework/serializable/mutators/endian.hpp>
 #include <framework/serializable/mutators/terminated_container.hpp>
 #include <framework/serializable/common_macros.hpp>
 

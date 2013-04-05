@@ -7,133 +7,120 @@ namespace framework
     {
         namespace detail
         {
-            template <typename Input, std::size_t N, typename Enabler>
-            struct read_count_exists_impl
+            template <typename T, std::size_t N, typename Enabler = void>
+            struct has_template_read : std::false_type {};
+
+            template <typename T, std::size_t N>
+            struct has_template_read <T, N,
+                decltype(std::declval <T> ().template read <N> (std::declval <char*> ()), void())
+                > : std::true_type {};
+
+            template <typename T, std::size_t N, typename Enabler = void>
+            struct has_template_write : std::false_type {};
+
+            template <typename T, std::size_t N>
+            struct has_template_write <T, N,
+                decltype(std::declval <T> ().template write <N> (std::declval <char const*> ()), void())
+                > : std::true_type {};
+
+            struct direct 
             {
-                using type = std::false_type;
+                template <std::size_t N, typename Stream>
+                FRAMEWORK_ALWAYS_INLINE
+                static typename std::enable_if <
+                    has_template_read <Stream, N>::value, 
+                    bool
+                >::type read (Stream& stream, void* s)
+                {
+                    return !!(stream.template read <N> (reinterpret_cast <char*> (s)));
+                }
+
+                template <std::size_t N, typename Stream>
+                FRAMEWORK_ALWAYS_INLINE
+                static typename std::enable_if <
+                    !has_template_read <Stream, N>::value, 
+                    bool
+                >::type read (Stream& stream, void* s)
+                {
+                    return read(stream, s, N);
+                }
+
+                template <typename Stream>
+                FRAMEWORK_ALWAYS_INLINE
+                static bool read (Stream& stream, void* s, std::size_t n)
+                {
+                    return !!(stream.read(reinterpret_cast <char*> (s), n));
+                }
+
+                template <std::size_t N, typename Stream>
+                FRAMEWORK_ALWAYS_INLINE
+                static typename std::enable_if <
+                    has_template_write <Stream, N>::value, 
+                    bool
+                >::type write (Stream& stream, void const* s)
+                {
+                    return !!(stream.template write <N> (reinterpret_cast <char const*> (s)));
+                }
+
+                template <std::size_t N, typename Stream>
+                FRAMEWORK_ALWAYS_INLINE
+                static typename std::enable_if <
+                    !has_template_write <Stream, N>::value, 
+                    bool
+                >::type write (Stream& stream, void const* s)
+                {
+                    return write(stream, s, N);
+                }
+
+                template <typename Stream>
+                FRAMEWORK_ALWAYS_INLINE
+                static bool write (Stream& stream, void const* s, std::size_t n)
+                {
+                    return !!(stream.write(reinterpret_cast <char const*> (s), n));
+                }
             };
-
-            template <typename Input, std::size_t N>
-            struct read_count_exists_impl <Input, N, 
-                decltype(
-                    std::declval <Input> ().template read <N> (std::declval <char*> ()), 
-                    void()
-                )>
-            {
-                using type = std::true_type;
-            };
-
-            template <typename Output, std::size_t N, typename Enabler>
-            struct write_count_exists_impl
-            {
-                using type = std::false_type;
-            };
-
-            template <typename Output, std::size_t N>
-            struct write_count_exists_impl <Output, N, 
-                decltype(
-                    std::declval <Output> ().template write <N> (std::declval <char const*> ()), 
-                    void()
-                )> 
-            {
-                using type = std::true_type;
-            };
-        }
-
-        template <typename Specification, typename Input, typename Output>
-        bool dispatch_read (Input&& in, Output&& out)
-        {
-            return dispatch_read(in, out, (Specification*)nullptr);
-        }
-
-        template <typename Specification, typename Input, typename Output>
-        bool dispatch_write (Input&& in, Output&& out)
-        {
-            return dispatch_write(in, out, (Specification*)nullptr);
         }
 
         template <typename Input, typename T>
-        bool dispatch_read (Input& in, T& out, T*,
-            decltype(custom_read(in, out), void())*)
+        typename std::enable_if <
+            std::is_arithmetic <T>::value,
+            bool
+        >::type read_dispatch (T*, Input& in, T& out)
         {
-            return custom_read(in, out);
-        }
-
-        template <typename Output, typename T>
-        bool dispatch_write (T const& in, Output& out, T*,
-            decltype(custom_write(in, out), void())*)
-        {
-            return custom_write(in, out);
-        }
-
-        template <typename Input, typename Output>
-        bool read (Input&& in, Output&& out)
-        {
-            using type = typename std::remove_cv <typename std::remove_reference <Output>::type>::type;
-            return dispatch_read <type> (in, out);
-        }
-
-        template <typename Input, typename Output>
-        bool write (Input&& in, Output&& out)
-        {
-            using type = typename std::remove_cv <typename std::remove_reference <Input>::type>::type;
-            return dispatch_write <type> (in, out);
+            return detail::direct::read <sizeof(out)> (in, &out);
         }
         
-        template <typename Input, typename T>
-        bool custom_read (Input& in, T& out, 
-            typename std::enable_if <
-                std::is_arithmetic <T>::value &&
-                read_count_exists <Input, sizeof(T)>::value,
-                void
-            >::type*)
-        {
-            if (!in.template read <sizeof(T)> (reinterpret_cast <char*> (&out)))
-                return false;
-
-            return true;
-        }
-
-        template <typename Input, typename T>
-        bool custom_read (Input& in, T& out,
-            typename std::enable_if <
-                std::is_arithmetic <T>::value &&
-                !read_count_exists <Input, sizeof(T)>::value,
-                void
-            >::type*)
-        {
-            if (!in.read(reinterpret_cast <char*> (&out), sizeof(out)))
-                return false;
-
-            return true;
-        }
-
         template <typename Output, typename T>
-        bool custom_write (T const& in, Output& out, 
-            typename std::enable_if <
-                std::is_arithmetic <T>::value &&
-                write_count_exists <Output, sizeof(T)>::value,
-                void
-            >::type*)
+        typename std::enable_if <
+            std::is_arithmetic <T>::value,
+            bool
+        >::type write_dispatch (T*, T in, Output& out)
         {
-            if (!out.template write <sizeof(in)> (reinterpret_cast <char const*> (&in)))
-                return false;
-
-            return true;
+            return detail::direct::write <sizeof(in)> (out, &in);
         }
 
-        template <typename Output, typename T>
-        bool custom_write (T const& in, Output& out, 
-            typename std::enable_if <
-                std::is_arithmetic <T>::value &&
-                !write_count_exists <Output, sizeof(T)>::value,
-                void
-            >::type*)
+        template <std::size_t N, typename Stream>
+        bool stream_read (Stream&& stream, void* s)
         {
-            if (!out.write(reinterpret_cast <char const*> (&in), sizeof(in)))
-                return false;
+            return detail::direct::read <N> (stream, s);
+        }
 
-            return true;
+        template <typename Stream>
+        bool stream_read (Stream&& stream, void* s, std::size_t n)
+        {
+            return detail::direct::read(stream, s, n);
+        }
+
+        template <std::size_t N, typename Stream>
+        bool stream_write (Stream&& stream, void const* s)
+        {
+            return detail::direct::write <N> (stream, s);
+        }
+
+        template <typename Stream>
+        bool stream_write (Stream&& stream, void const* s, std::size_t n)
+        {
+            return detail::direct::write(stream, s, n);
         }
     }
 }

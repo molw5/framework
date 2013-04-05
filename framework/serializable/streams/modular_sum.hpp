@@ -3,7 +3,7 @@
 
 /**
 * \file
-* \brief Internet checksum wrapper.
+* \brief Modular sum writer.
 *
 * \copyright
 * Copyright &copy; 2012 iwg molw5<br>
@@ -17,108 +17,178 @@
 #include <cassert>
 #include <algorithm>
 
+#include <framework/common/variadic_switch_return.hpp>
 #include <framework/common/endian.hpp>
 
 namespace framework
 {
     namespace serializable
     {
+        /**
+        * \headerfile modular_sum.hpp <framework/serializable/streams/modular_sum.hpp>
+        * \brief Modular sum writer.
+        *
+        * Computes the 8*Bytes bit one's complement sum of the bytes written to this stream.
+        *
+        * \tparam Bytes number of bytes to use in the sum
+        * \tparam Order input byte endianness
+        */
         template <std::size_t Bytes, byte_order Order>
-        class modular_sum;
-
-        template <byte_order Order>
-        class modular_sum <2, Order>
+        class modular_sum
         {
             static_assert(
                 Order == byte_order::little_endian || 
                 Order == byte_order::big_endian,
                 "Specified byte order not implemented");
 
+            static_assert(
+                Bytes <= 8,
+                "Specified byte count not implemented");
+
             private:
-                template <std::size_t N, bool State>
-                bool write_impl (char const* s);
+                enum{ value_mask = (~static_cast <uint64_t> (0)) >> (64 - 8*Bytes) };
+                enum{ value_shift = 8*Bytes };
+                enum{ offset = (Order == byte_order::big_endian ? 8*(Bytes-1) : 0) };
+                enum{ multiplier = (Order == byte_order::big_endian ? -8 : 8) };
 
-                template <bool State>
-                bool write_impl (char const* s, std::size_t n);
-
-            public:
-                template <bool Flip = false>
-                bool write (char const* s, std::size_t n)
+                template <unsigned int State, std::size_t N, std::size_t Index = 0>
+                struct unroll
                 {
-                    if (p_bState != Flip)
-                        return write_impl <false> (s, n);
-                    else
-                        return write_impl <true> (s, n);
-                }
-
-                template <std::size_t N, bool Flip = false>
-                bool write (char const* s) 
-                {
-                    if (p_bState != Flip)
-                        return write_impl <N, false> (s);
-                    else
-                        return write_impl <N, true> (s);
-                }
-
-                uint16_t checksum () const
-                {
-                    uint64_t result = p_iSum;
-                    while (result >> 16)
-                        result = (result & 0xFFFF) + (result >> 16);
-
-                    // The performance impact of performing this check at runtime was found to be negligible
-                    if (Order == byte_order::little_endian)
+                    FRAMEWORK_ALWAYS_INLINE
+                    static uint64_t run (unsigned char const* s)
                     {
-                        uint16_t test = 0x0102;
-                        if (static_cast <uint8_t> (*reinterpret_cast <char const*> (&test)) == 0x01)
-                            return ~FRAMEWORK_BYTESWAP16(static_cast <uint16_t> (result));
-                        else
-                            return ~static_cast <uint16_t> (result);
+                        enum{ shift = offset + multiplier*((State + Index) % Bytes) };
+                        return (static_cast <uint64_t> (*s) << shift) | unroll <State, N, Index+1>::run(s+1);
                     }
-                    else if (Order == byte_order::big_endian)
+                };
+
+                template <unsigned int State, std::size_t N>
+                struct unroll <State, N, N>
+                {
+                    FRAMEWORK_ALWAYS_INLINE
+                    static uint64_t run (unsigned char const*)
                     {
-                        uint16_t test = 0x0102;
-                        if (static_cast <uint8_t> (*reinterpret_cast <char const*> (&test)) == 0x01)
-                            return ~static_cast <uint16_t> (result);
-                        else
-                            return ~FRAMEWORK_BYTESWAP16(static_cast <uint16_t> (result));
+                        return 0;
                     }
-                    else
+                };
+
+                template <std::size_t N>
+                struct handler_fixed
+                {
+                    template <std::size_t I, typename T>
+                    FRAMEWORK_ALWAYS_INLINE
+                    bool operator() (T* this_ptr, unsigned char const* s)
+                    {
+                        enum{ new_state = (I+N) % Bytes };
+                        enum{ loop_count = N / Bytes };
+                        enum{ remainder = N % Bytes };
+
+                        for (unsigned int i=0; i < loop_count; ++i, s += Bytes)
+                            this_ptr->add(unroll <I, Bytes>::run(s));
+
+                        this_ptr->add(unroll <I, remainder>::run(s));
+                        this_ptr->p_iState = new_state;
+                        return true;
+                    }
+
+                    template <typename T>
+                    FRAMEWORK_ALWAYS_INLINE
+                    bool operator() (T*, unsigned char const*)
                     {
                         assert(false);
                     }
+                };
+
+                struct handler_dynamic
+                {
+                    template <std::size_t I, typename T>
+                    FRAMEWORK_ALWAYS_INLINE
+                    bool operator() (T* this_ptr, unsigned char const* s, std::size_t n)
+                    {
+                        this_ptr->p_iState = (I + n) % Bytes;
+
+                        for (; n >= Bytes; s += Bytes, n -= Bytes)
+                            this_ptr->add(unroll <I, Bytes>::run(s));
+
+                        switch (n)
+                        {
+                            case 7: return this_ptr->add(unroll <I, 7>::run(s));
+                            case 6: return this_ptr->add(unroll <I, 6>::run(s));
+                            case 5: return this_ptr->add(unroll <I, 5>::run(s));
+                            case 4: return this_ptr->add(unroll <I, 4>::run(s));
+                            case 3: return this_ptr->add(unroll <I, 3>::run(s));
+                            case 2: return this_ptr->add(unroll <I, 2>::run(s));
+                            case 1: return this_ptr->add(unroll <I, 1>::run(s));
+                            case 0: return true;
+                            default: assert(false);
+                        }
+                    }
+
+                    template <typename T>
+                    FRAMEWORK_ALWAYS_INLINE
+                    bool operator() (T*, unsigned char const*, std::size_t)
+                    {
+                        assert(false);
+                    }
+                };
+
+            public:
+                /**
+                * \brief Write bytes.
+                */ 
+                template <std::size_t N>
+                bool write (char const* s) 
+                {
+                    using values = make_values <std::size_t, Bytes>;
+                    auto const ptr = reinterpret_cast <unsigned char const*> (s);
+                    return variadic_switch_return <values> (p_iState, handler_fixed <N> (), this, ptr);
                 }
 
+                /**
+                * \brief Write bytes.
+                */ 
+                bool write (char const* s, std::size_t n)
+                {
+                    using values = make_values <std::size_t, Bytes>;
+                    auto const ptr = reinterpret_cast <unsigned char const*> (s);
+                    return variadic_switch_return <values> (p_iState, handler_dynamic(), this, ptr, n);
+                }
+
+                /**
+                * \brief Get checksum.
+                *
+                * Returns the checksum, defined as the complement of the current sum.
+                */
+                uint64_t checksum () const
+                {
+                    uint64_t result = p_iSum;
+                    while (result >> value_shift)
+                        result = (result & value_mask) + (result >> value_shift);
+
+                    return (~result) & value_mask;
+                }
+
+                /**
+                * \brief Reset.
+                */
                 void reset ()
                 {
                     p_iSum = 0;
                 }
 
             private:
+                FRAMEWORK_ALWAYS_INLINE
                 bool add (uint64_t x)
                 {
-                    // We can do marginally better here if we don't fold or otherwise account for overflow 
-                    // (reasonably safe - on the order of 256TB of data would need to be summed to overflow),
-                    // however in practice the effect was found to be small when compared to the optimized
-                    // overflow handlers below.
-
-#if defined(__clang__)
                     auto const result = p_iSum + x;
                     p_iSum = result + (result < x);
-#elif defined(__GNUC__)
-                    p_iSum += x;                    
-                    if (static_cast <int64_t> (p_iSum) < 0)
-                        p_iSum = (p_iSum & 0xFFFF) + (p_iSum >> 16);
-#else
-                    p_iSum += x;
-                    p_iSum = (p_iSum & 0xFFFF) + (p_iSum >> 16);
-#endif
+
                     return true;
                 }
 
             private:
                 uint64_t p_iSum {0};
-                bool p_bState {true};
+                unsigned int p_iState {0};
         };
 
         using internet_checksum = modular_sum <2, byte_order::big_endian>;

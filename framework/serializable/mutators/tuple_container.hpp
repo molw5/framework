@@ -53,16 +53,13 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename... Parameters,
-            typename Container>
-        bool dispatch_read (Input& in, Output& out, 
+            typename Container,
+            typename Input,
+            typename Output>
+        bool read_dispatch (
             tuple_container <pack_container <Parameters...>, Container>*,
-            typename std::enable_if <
-                std::is_same <Output, Container>::value,
-                void
-            >::type* = nullptr)
+            Input& in, Output& out)
         {
             Container result;
             if (!detail::tuple_container_impl <0, Parameters...>::read(in, result))
@@ -83,16 +80,13 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename... Parameters,
-            typename Container>
-        bool dispatch_write (Input const& in, Output& out, 
+            typename Container,
+            typename Input,
+            typename Output>
+        bool write_dispatch (
             tuple_container <pack_container <Parameters...>, Container>*,
-            typename std::enable_if <
-                std::is_same <Input, Container>::value,
-                void
-            >::type* = nullptr)
+            Input const& in, Output& out)
         {
             return detail::tuple_container_impl <0, Parameters...>::write(in, out);
         }

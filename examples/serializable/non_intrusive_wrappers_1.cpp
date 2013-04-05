@@ -31,12 +31,14 @@ struct link : value_type <Type, Specification, link_implementation, false>
 
 // Implement the serialization of the 'link' data member
 template <
-    typename Input,
-    typename Output,
     typename Type,
     Type Offset,
-    typename Specification>
-bool dispatch_read (Input& in, Output& out, link <Type, Offset, Specification>*)
+    typename Specification,
+    typename Input,
+    typename Output>
+bool read_dispatch (
+    link <Type, Offset, Specification>*,
+    Input&& in, Output&& out)
 {
     using ::framework::serializable::dispatch_read;
 
@@ -49,33 +51,36 @@ bool dispatch_read (Input& in, Output& out, link <Type, Offset, Specification>*)
 }
 
 template <
-    typename Input,
-    typename Output,
     typename Type,
     Type Offset,
-    typename Specification>
-bool dispatch_write (Input const& in, Output& out, link <Type, Offset, Specification>*)
+    typename Specification,
+    typename Input,
+    typename Output>
+bool write_dispatch (
+    link <Type, Offset, Specification>*,
+    Input&& in, Output&& out)
 {
     using ::framework::serializable::dispatch_write;
 
     type_extractor <Specification> const& value = in.*Offset;
-    if (!dispatch_write <Specification> (value, out))
-        return false;
-
-    return true;
+    return dispatch_write <Specification> (value, out);
 }
 
 // Define a template used to bind a specification to a particular structure
 #define BIND(Specification, Structure) \
-template <typename Input> \
-bool custom_read (Input& in, Structure& out) \
+template <typename Input, typename Output> \
+bool read_dispatch (\
+    Structure*, \
+    Input&& in, Output&& out) \
 { \
     using ::framework::serializable::dispatch_read; \
     return dispatch_read <Specification> (in, out); \
 } \
 \
-template <typename Output> \
-bool custom_write (Structure const& in, Output& out) \
+template <typename Input, typename Output> \
+bool write_dispatch ( \
+    Structure*, \
+    Input&& in, Output&& out) \
 { \
     using ::framework::serializable::dispatch_write; \
     return dispatch_write <Specification> (in, out); \

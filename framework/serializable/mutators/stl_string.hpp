@@ -27,7 +27,7 @@ namespace framework
         * \brief Common STL string specification.
         */
         template <typename Size>
-        using stl_string = variable_container <Size, char, std::string>;
+        using stl_string = variable_container <Size, char, std::string, true>;
 
         /**
         * \brief Common STL string specification, null terminated.

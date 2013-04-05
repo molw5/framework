@@ -16,6 +16,9 @@
 
 #pragma once
 
+#include <framework/common/byte_swap.hpp>
+#include <framework/common/word_swap.hpp>
+
 /**
 * \headerfile endian.hpp <framework/common/endian.hpp>
 * \brief Big endian constant.
@@ -26,6 +29,11 @@
 * \brief Little endian constant.
 */
 #define FRAMEWORK_LITTLE_ENDIAN 2
+
+/**
+* \brief PDP (middle) endian constant.
+*/
+#define FRAMEWORK_PDP_ENDIAN 3
 
 #ifdef DOXYGEN
     #error "Documentation only"
@@ -58,6 +66,8 @@
             #define FRAMEWORK_HOST_ENDIANNESS FRAMEWORK_LITTLE_ENDIAN
         #elif __BYTE_ORDER == __BIG_ENDIAN
             #define FRAMEWORK_HOST_ENDIANNESS FRAMEWORK_BIG_ENDIAN
+        #elif __BYTE_ORDER == __PDP_ENDIAN
+            #define FRAMEWORK_HOST_ENDIANNESS FRAMEWORK_PDP_ENDIAN
         #else
             #error "Host endianness not supported"
         #endif
@@ -74,6 +84,8 @@
             #define FRAMEWORK_HOST_FLOAT_ENDIANNESS FRAMEWORK_LITTLE_ENDIAN
         #elif __FLOAT_WORD_ORDER == __BIG_ENDIAN
             #define FRAMEWORK_HOST_FLOAT_ENDIANNESS FRAMEWORK_BIG_ENDIAN
+        #elif __FLOAT_WORD_ORDER == __PDP_ENDIAN
+            #define FRAMEWORK_HOST_FLOAT_ENDIANNESS FRAMEWORK_PDP_ENDIAN
         #else
             #error "Host endianness not supported"
         #endif
@@ -85,6 +97,7 @@
 // A compatible FRAMEWORK_HOST_ENDIANNESS value must be provided
 #if FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_BIG_ENDIAN
 #elif FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
+#elif FRAMEWORK_HOST_ENDIANNESS == FRAMEWORK_PDP_ENDIAN
 #else
     #error "Invalid FRAMEWORK_HOST_ENDIANNESS definition"
 #endif
@@ -92,6 +105,7 @@
 // A compatible FRAMEWORK_HOST_FLOAT_ENDIANNESS value must be provided
 #if FRAMEWORK_HOST_FLOAT_ENDIANNESS == FRAMEWORK_BIG_ENDIAN
 #elif FRAMEWORK_HOST_FLOAT_ENDIANNESS == FRAMEWORK_LITTLE_ENDIAN
+#elif FRAMEWORK_HOST_FLOAT_ENDIANNESS == FRAMEWORK_PDP_ENDIAN
 #else
     #error "Invalid FRAMEWORK_HOST_FLOAT_ENDIANNESS definition"
 #endif
@@ -108,6 +122,69 @@ namespace framework
     {
         little_endian = FRAMEWORK_LITTLE_ENDIAN,
         big_endian = FRAMEWORK_BIG_ENDIAN,
+        pdp_endian = FRAMEWORK_PDP_ENDIAN,
         host_endian = FRAMEWORK_HOST_ENDIANNESS
     };
+
+    namespace detail
+    {
+        template <typename T, typename Enabler = void>
+        struct little_to_host_impl;
+
+        template <typename T, typename Enabler = void>
+        struct host_to_little_impl;
+
+        template <typename T, typename Enabler = void>
+        struct big_to_host_impl;
+
+        template <typename T, typename Enabler = void>
+        struct host_to_big_impl;
+
+        template <typename T, typename Enabler = void>
+        struct pdp_to_host_impl;
+
+        template <typename T, typename Enabler = void>
+        struct host_to_pdp_impl;
+
+        template <typename T>
+        using reduce = typename std::remove_cv <typename std::remove_reference <T>::type>::type;
+    }
+
+    template <typename T>
+    detail::reduce <T> little_to_host (T&& x)
+    {
+        return detail::little_to_host_impl <detail::reduce <T>>::run(std::forward <T> (x));
+    }
+
+    template <typename T>
+    detail::reduce <T> host_to_little (T&& x)
+    {
+        return detail::host_to_little_impl <detail::reduce <T>>::run(std::forward <T> (x));
+    }
+
+    template <typename T>
+    detail::reduce <T> big_to_host (T&& x)
+    {
+        return detail::big_to_host_impl <detail::reduce <T>>::run(std::forward <T> (x));
+    }
+
+    template <typename T>
+    detail::reduce <T> host_to_big (T&& x)
+    {
+        return detail::host_to_big_impl <detail::reduce <T>>::run(std::forward <T> (x));
+    }
+
+    template <typename T>
+    detail::reduce <T> pdp_to_host (T&& x)
+    {
+        return detail::pdp_to_host_impl <detail::reduce <T>>::run(std::forward <T> (x));
+    }
+
+    template <typename T>
+    detail::reduce <T> host_to_pdp (T&& x)
+    {
+        return detail::host_to_pdp_impl <detail::reduce <T>>::run(std::forward <T> (x));
+    }
 }
+
+#include <framework/common/endian.inl>

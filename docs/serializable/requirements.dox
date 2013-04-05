@@ -1,0 +1,32 @@
+/**
+\page serializable_requirements Requirements
+\note
+This library leverages new C++11 language features heavily - as such, no
+attempt has been made to maintain compatibility with older compilers.
+Certain features critical to the implementation of the syntax used here,
+such as the \c NAME macro, have no comparable C++03 or common vendor
+specific equivalents.
+
+### Required C++11 Features: ###
+- Rvalue references
+- Variadic templates
+- Static assertions
+- auto-typed variables
+ - New function declarator syntax
+- Declared type of an expression
+- Right angle brackets
+- Template aliases
+- Null pointer constant
+- Generalized constant expressions
+- Delegating constructors
+- Defaulted and deleted functions
+- Extended friend declarations
+- Range-based for
+
+\warning
+The list above may be incomplete or dated.
+
+### Supported compilers: ###
+ - GCC 4.7.2
+ - clang 3.3
+**/

@@ -27,7 +27,8 @@
 #include <boost/preprocessor/punctuation/comma_if.hpp>
 #include <boost/preprocessor/iteration/local.hpp>
 
-#include <framework/common/containers/value_container.hpp>
+#include <framework/common/common_macros.hpp>
+#include <framework/common/pack_container.hpp>
 
 #ifndef FRAMEWORK_VARIADIC_SWITCH_LIMIT
     #define FRAMEWORK_VARIADIC_SWITCH_LIMIT 20
@@ -58,7 +59,7 @@ namespace framework
     * call to variadic_switch_return:
     *
     * \code
-    * return variadic_switch_return <value_list <std::size_t, 0, 1, 2, 3, 4>> (i, f);
+    * return variadic_switch_return <make_indices <5>> (f, i);
     * \endcode
     *
     * is equivalent to the following series of switch statements:
@@ -92,17 +93,16 @@ namespace framework
     */
     template <
         typename CaseList,
-        typename Handler, 
+        typename Handler,
+        typename Index,
         typename... Args>
-    auto variadic_switch_return (
-        typename CaseList::type const& index, 
-        Handler&& handler, 
-        Args&&... args) ->
+    FRAMEWORK_ALWAYS_INLINE
+    auto variadic_switch_return (Handler&& handler, Index&& index, Args&&... args) ->
     decltype(handler(std::forward <Args> (args)...))
     {
         return detail::variadic_switch_return_impl <CaseList>::run(
-            index,
             std::forward <Handler> (handler),
+            std::forward <Index> (index),
             std::forward <Args> (args)...);
     }
 }

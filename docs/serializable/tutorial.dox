@@ -1,0 +1,266 @@
+/**
+\page serializable_tutorial Tutorial
+\tableofcontents
+
+\section serializable_simple A simple example
+
+The code provided in \c a_simple_example.cpp demonstrates the simplest 
+possible use case for this library - a basic structure is defined, 
+serialized, and deserialized.
+
+\include a_simple_example.cpp
+
+"filename" output:
+
+\code
+0000000: 0100 0000 0000 0000 0000 0040 4865 6c6c  ...........@Hell
+0000010: 6f20 576f 726c 6421 00                   o World!.
+\endcode
+
+\section serializable_portable A portable example
+
+The example above is not portable - an output file produced on one 
+architecture may not be interpreted properly when read on another.
+To correct this, the endianness of serialized data must
+be defined - this library provides the mutator types \c little_endian
+and \c big_endian for this purpose.
+
+\note
+Unlike Boost.Serializable, which embeds endianness information into the 
+stream (or Archive), this library specifies endianness of individual
+values.  This is largely a reflection of the different intended use
+cases of the two libraries - there is no guarantee that a protocol
+will use consistent byte (or bit) packing across any logical message
+block.  Applications may recover this behaviour, if desirable, using
+custom container types or by redefining the default serialization of
+fundamental types, provided in \c base_types.hpp.
+
+This library distinguishes between various types of constructs in a specification -  containers types 
+and value types, for example, operate on serializable objects, while mutators types operate 
+directly on underlying data.  A mutator type can be thought of as "wrapping" the serialization of an
+underlying type (ie: another mutator, a string, a vector, a tuple, a fundamental type, ...), defining 
+or altering how that type is serialized.  Mutator types generally use the following basic pattern:
+
+\code
+// mutator_type <internal_type(s), underlying_type>
+mutator_type <int>
+mutator_type <mutator_type <int>>
+mutator_type <int, std::vector <int>>
+...
+\endcode
+
+\note
+Some of the mutators defined by this library restrict the underlying
+type; \c little_endian and \c big_endian, for example, require an underlying
+fundamental type.
+
+A simple portable example using the \c little_endian and \c big_endian mutators
+to serialize data is provided in \c a_portable_example.cpp:
+
+\include a_portable_example.cpp
+
+"filename" output:
+
+\code
+0000000: 0100 0000 4000 0000 0000 0000 0c00 0000  ....@...........
+0000010: 4800 0000 6500 0000 6c00 0000 6c00 0000  H...e...l...l...
+0000020: 6f00 0000 2000 0000 5700 0000 6f00 0000  o... ...W...o...
+0000030: 7200 0000 6c00 0000 6400 0000 2100 0000  r...l...d...!...
+\endcode
+
+\section serializable_custom_structures Custom structures
+
+The preceding examples used \c inline_object to define the layout of a structure.  This template is 
+convenient for it's brevity - constructors, comparison operators, and common accessor methods are all 
+defined.  User defined structures may want to include some or all of these features - to illustrate
+how this performed in this library, the construction of a comparable structure is covered in some
+detail here.
+
+To begin, we present a simple C structure we would like to transform into a serializable object:
+
+\code
+struct object
+{
+    int x;
+    double y;
+
+    double foo () { return x + y; }
+};
+\endcode
+
+The structure above (neglecting foo for the moment) may be reformulated as follows:
+
+\code
+struct object : serializable <object,
+    value <NAME("x"), int>,
+    value <NAME("y"), double>>
+{
+};
+\endcode
+
+The above is sufficient to allow the serializable library to read/write \c object, interact with fields 
+through the free functions defined in common.hpp, and compare the object through the free functions 
+defined in comparable.hpp.  For example, the following sets and compares two such objects:
+
+\code
+object o1, o2;
+
+set <NAME("x")> (o1, 1);
+set <NAME("y")> (o1, 2.0);
+set <NAME("x")> (o2, 1);
+set <NAME("y")> (o2, 3.0);
+
+assert(less_than(o1, o2));
+\endcode
+
+The above is clearly unwieldy - construction and comparison are needlessly verbose.  To address this, we 
+begin by adding a forwarding constructor:
+
+\code
+struct object : serializable <object,
+    value <NAME("x"), int>,
+    value <NAME("y"), double>>
+{
+    template <typename... Args>
+    object (Args&&... args)
+        : object::serializable_base(std::forward <Args> (args)...)
+    {
+    }
+};
+\endcode
+
+\note
+The \c serializable base class here defines how the above arguments are mapped to the associated base 
+class constructors.  Generally speaking, one parameter in the above pack is forwarded to each named 
+value in an object, in the order it appears in the object's specification.
+
+\note
+The \c serializable_base typedef is provided by \c serializable to allow \c object to easily refer
+to this base without duplicating the template parameters provided to \c serializable.
+
+With the above constructor in place, we may reformulate the sample code above more efficiently as:
+
+\code
+object o1{1, 2.0}, o2{1, 3.0};
+assert(less_than(o1, o2));
+\endcode
+
+Next, common comparison operators need to be added.  The defaults (member-wise comparison) are sufficient
+here and as such these operators may be added trivially through the use of the \c comparable template:
+
+\code
+struct object : 
+    comparable <object>,
+    serializable <object,
+        value <NAME("x"), int>,
+        value <NAME("y"), double>>
+{
+    template <typename... Args>
+    object (Args&&... args)
+        : object::serializable_base(std::forward <Args> (args)...)
+    {
+    }
+};
+\endcode
+
+The above provides \c object with common comparison operators through the use of the Barton-Nackman
+trick.  This leads to the final reformulation of the above sample:
+
+\code
+object o1{1, 2.0}, o2{1, 3.0};
+assert(o1 < o2);
+\endcode
+
+Finally, we return to the sample function \c foo.  Objects similar to the above should generally
+access members of it's base classes directly rather than relying on free functions like \c get 
+and \c set - this allows the class access to protected members of a value type's implementation.
+The \c get_base template facilitates this by providing a means of associating a value type's
+identifier with the corresponding base class type, as demonstrated below:
+
+\code
+struct object : 
+    comparable <object>,
+    serializable <object,
+        value <NAME("x"), int>,
+        value <NAME("y"), double>>
+{
+    template <typename... Args>
+    object (Args&&... args)
+        : object::serializable_base(std::forward <Args> (args)...)
+    {
+    }
+
+    double foo ()
+    {
+        using x = typename get_base <object, NAME("x")>::type;
+        using y = typename get_base <object, NAME("y")>::type;
+    
+        return x::get() + y::get();
+    }
+};
+\endcode
+
+Again, the syntax above is rather unwieldy - the basic pattern is clearly required to
+retain protected access, however we can clean up the retrieval of the base class somewhat.
+In particular, a template alias may be used to reduce most of the redundancy above - the
+macro \c DEFINE_BASE_TEMPLATE is provided for exactly that purpose.  This change leads to
+the final reformulation of \c object as follows:
+
+\code
+struct object : 
+    comparable <object>,
+    serializable <object,
+        value <NAME("x"), int>,
+        value <NAME("y"), double>>
+{
+    DEFINE_BASE_TEMPLATE(object);
+
+    template <typename... Args>
+    object (Args&&... args)
+        : object::serializable_base(std::forward <Args> (args)...)
+    {
+    }
+
+    double foo ()
+    {
+        return base <NAME("x")>::get() + base <NAME("y")>::get();
+    }
+};
+\endcode
+
+The above introduced nearly every convenience feature provided by \c inline_object with the 
+exception of common accessor methods; their construction is neglected here.  These methods 
+introduce no new library specific information and as such the implementation of 
+\c inline_object should suffice - see \c inline_object.hpp for more details. A simple example of 
+a custom structure definition, together with an appropriate serialization test, is provided 
+in custom_structures.cpp:
+
+\include custom_structures.cpp
+
+\section serializable_custom_implementation Custom implementations
+
+Value types provided in this library allow a final optional template parameter that may be used
+to override the type's default implementation.  This may be desirable for numerous reasons -
+direct access to the underlying type may be required, accessors may need to be protected,
+invariants may need to be established, and so on.  The examples provided in custom_implementation.cpp
+illustrate the usage of this parameter by providing two such implementations - the first establishes
+a simple invariant while the second widens an arbitrary underlying value type to an integer, where
+appropriate.
+
+\note
+The implementation override used here accepts a single typename parameter used to provide the
+structure with the information it may require from the value type's specification.  For example,
+\c value provides it's implementation with the associated name, underlying type, derived class type,
+and so on - see value_implementation_wrapper for more details.  Custom implementations are
+strongly encouraged to use these types to avoid effective duplication of portions of the object's
+specification.
+
+\include custom_implementation.cpp
+
+\todo
+- Introduce the differences between container types, value types, and mutator 
+- Add documentation for "custom_serialization" example
+- Add documentation for "adding_mutator_types" example
+- Add documentation for "adding_container_types" example
+- Add documentation for "custom_serializable_implementation" example
+*/ 

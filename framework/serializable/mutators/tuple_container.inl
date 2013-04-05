@@ -14,12 +14,14 @@ namespace framework
             struct tuple_container_impl <Index>
             {
                 template <typename Input, typename Output>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool read (Input&, Output&)
                 {
                     return true;
                 }
 
                 template <typename Input, typename Output>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool write (Input const&, Output&)
                 {
                     return true;
@@ -30,10 +32,10 @@ namespace framework
             struct tuple_container_impl <Index, Head, Tail...>
             {
                 template <typename Input, typename Output>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool read (Input& in, Output& out)
                 {
                     using ::std::get;
-                    using ::framework::serializable::dispatch_read;
 
                     if (!dispatch_read <Head> (in, get <Index> (out)))
                         return false;
@@ -42,10 +44,10 @@ namespace framework
                 }
 
                 template <typename Input, typename Output>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool write (Input const& in, Output& out)
                 {
                     using ::std::get;
-                    using ::framework::serializable::dispatch_write;
 
                     if (!dispatch_write <Head> (get <Index> (in), out))
                         return false;

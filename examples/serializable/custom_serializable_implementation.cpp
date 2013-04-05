@@ -18,53 +18,16 @@ using ::framework::serializable::serializable_implementation;
 using ::framework::serializable::extract_values;
 using ::framework::serializable::container_specification;
 using ::framework::serializable::container_children;
+using ::framework::sort_pack;
 
-// Extracts the smallest element of a pack_container
-template <typename Args>
-struct minimum;
-
-template <typename Head, typename... Tail>
-struct minimum <pack_container <Head, Tail...>>
-{
-    using next = minimum <pack_container <Tail...>>;
-    enum { smallest = sizeof(inline_object <Head>) < sizeof(inline_object <typename next::type>) };
-
-    using type = 
-        typename std::conditional <
-            smallest,
-            Head,
-            typename next::type
-        >::type;
-    
-    using remaining =
-        typename std::conditional <
-            smallest,
-            merge_packs <pack_container <typename next::type>, typename next::remaining>,
-            merge_packs <pack_container <Head>, typename next::remaining>
-        >::type;
-};
-
-template <typename Head>
-struct minimum <pack_container <Head>>
-{
-    using type = Head;
-    using remaining = pack_container <>;
-};
-
-// Sorts a list of types by size
-template <typename Args>
-struct sort_by_size
-{
-    using current = minimum <Args>;
-    using type = merge_packs <pack_container <typename current::type>,
-            typename sort_by_size <typename current::remaining>::type>;
-};
-
-template <>
-struct sort_by_size <pack_container <>>
-{
-    using type = pack_container <>;
-};
+// Define the sort operation
+template <typename Lhs, typename Rhs>
+using size_compare =
+    typename std::conditional <
+        (sizeof(inline_object <Lhs>) > sizeof(inline_object <Rhs>)),
+        std::true_type,
+        std::false_type
+    >::type;
 
 // Adds a new serializable_implementation
 template <typename Derived, typename... Specification>
@@ -75,9 +38,7 @@ using packed_serializable = ::framework::serializable::serializable_implementati
     
     // The list of inherited types is sorted by size.  A better implementation could
     // solve the associated bin-packing problem.
-    typename sort_by_size <
-        extract_values <alias <Specification...>, container_specification>
-    >::type,
+    sort_pack <extract_values <alias <Specification...>, container_specification>, size_compare>,
 
     // The constructed and visible types are unchanged
     extract_values <alias <Specification...>, container_children>,

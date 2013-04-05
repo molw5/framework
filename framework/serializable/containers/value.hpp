@@ -16,8 +16,9 @@
 
 #include <framework/serializable/base_types.hpp>
 #include <framework/serializable/mutator_type.hpp>
+#include <framework/serializable/value_type.hpp>
 #include <framework/serializable/container_type.hpp>
-#include <framework/common/containers/index_container.hpp>
+#include <framework/common/pack_container.hpp>
 
 namespace framework
 {
@@ -159,17 +160,17 @@ namespace framework
                 * \param args value constructor arguments
                 */
                 template <typename... Args>
-                default_value (std::tuple <Args&&...>&& args)
+                default_value (std::tuple <Args...>&& args)
                     : default_value (
-                        std::forward <std::tuple <Args&&...>> (args), 
+                        std::forward <std::tuple <Args...>> (args), 
                         static_cast <make_indices <sizeof... (Args)>*> (nullptr))
                 {
                 }
 
             private:
-                template <typename... Args, std::size_t... Indices>
-                default_value (std::tuple <Args&&...> args, index_container <Indices...>*)
-                    : p_tValue{std::forward <Args> (std::get <Indices> (args))...}
+                template <typename... Args, typename... Indices>
+                default_value (std::tuple <Args...> args, pack_container <Indices...>*)
+                    : p_tValue{std::forward <Args> (std::get <Indices::value> (args))...}
                 {
                 }
 

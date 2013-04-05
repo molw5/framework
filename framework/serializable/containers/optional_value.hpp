@@ -18,7 +18,8 @@
 #include <framework/serializable/base_types.hpp>
 #include <framework/serializable/mutator_type.hpp>
 #include <framework/serializable/utility/interface.hpp>
-#include <framework/common/containers/index_container.hpp>
+#include <framework/common/pack_container.hpp>
+#include <framework/serializable/containers/optional_field.hpp>
 
 namespace framework
 {
@@ -29,7 +30,7 @@ namespace framework
         * \brief Optional value implementation.
         */
         template <typename T>
-        struct optional_value_implementation
+        struct default_optional_value
         {
             private:
                 using implementation = typename T::implementation;
@@ -80,13 +81,13 @@ namespace framework
                 /**
                 * \brief Default destructor.
                 */
-                ~optional_value_implementation () = default;
+                ~default_optional_value () = default;
                 
                 /**
                 * \brief Default constructor.
                 * \post check() == false
                 */
-                optional_value_implementation ()
+                default_optional_value ()
                     : p_tValue()
                 {
                     assert(!static_cast <implementation const*> (this)->check());
@@ -96,7 +97,7 @@ namespace framework
                 * \brief Value constructor.
                 * \post check() == true
                 */
-                optional_value_implementation (value_type value)
+                default_optional_value (value_type value)
                     : p_tValue(std::move(value)),
                       p_bIsSet{true}
                 {
@@ -106,8 +107,8 @@ namespace framework
                 /**
                 * \brief Default constructor alias.
                 */
-                optional_value_implementation (std::tuple <>)
-                    : optional_value_implementation ()
+                default_optional_value (std::tuple <>)
+                    : default_optional_value ()
                 {
                 }
 
@@ -116,8 +117,8 @@ namespace framework
                 * \post check() == true
                 */
                 template <typename... Args>
-                optional_value_implementation (std::tuple <Args&&...>&& args)
-                    : optional_value_implementation (
+                default_optional_value (std::tuple <Args&&...>&& args)
+                    : default_optional_value (
                         std::forward <std::tuple <Args&&...>> (args), 
                         static_cast <typename make_indices <sizeof... (Args)>::type*> (nullptr))
                 {
@@ -125,9 +126,9 @@ namespace framework
                 }
 
             private:
-                template <typename... Args, std::size_t... Indices>
-                optional_value_implementation (std::tuple <Args&&...> args, index_container <Indices...>*)
-                    : p_tValue{std::forward <Args> (std::get <Indices> (args))...},
+                template <typename... Args, typename... Indices>
+                default_optional_value (std::tuple <Args&&...> args, pack_container <Indices...>*)
+                    : p_tValue{std::forward <Args> (std::get <Indices::value> (args))...},
                       p_bIsSet{true}
                 {
                 }
@@ -145,7 +146,7 @@ namespace framework
             int64_t Flag,
             typename Name,
             typename Specification,
-            template <typename> class Implementation = optional_value_implementation>
+            template <typename> class Implementation = default_optional_value>
         struct optional_value : public value_type <
             Name,
             Specification,
@@ -169,22 +170,24 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             int64_t Flag,
             typename Name,
             typename Specification,
-            template <typename> class Implementation>
-        bool dispatch_read (Input& in, Output& out, optional_value <Flag, Name, Specification, Implementation>*)
+            template <typename> class Implementation,
+            typename Input,
+            typename Output>
+        bool read_dispatch (
+            optional_value <Flag, Name, Specification, Implementation>*,
+            Input& in, Output& out)
         {
-            using value_alias = value_type <Name, Specification, Implementation>;
-
-            if (!in.checkFlag(Flag))
+            if (!in.check_flag(Flag))
+            {
                 interface <Name> (out).clear();
-            else if (!dispatch_read <value_alias> (in, out))
-                return false;
+                return true;
+            }
 
-            return true;
+            using value_alias = value_type <Name, Specification, Implementation>;
+            return dispatch_read <value_alias> (in, out);
         }
 
         /**
@@ -198,24 +201,51 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             int64_t Flag,
             typename Name,
             typename Specification,
-            template <typename> class Implementation>
-        bool dispatch_write (Input const& in, Output& out, optional_value <Flag, Name, Specification, Implementation>*)
+            template <typename> class Implementation,
+            typename Input,
+            typename Output>
+        bool write_dispatch (
+            optional_value <Flag, Name, Specification, Implementation>*,
+            Input const& in, Output& out)
         {
-            using value_alias = value_type <Name, Specification, Implementation>;
-
             if (!interface <Name> (in).check())
                 return true;
 
-            if (!dispatch_write <value_alias> (in, out))
-                return false;
+            using value_alias = value_type <Name, Specification, Implementation>;
+            return dispatch_write <value_alias> (in, out);
+        }
 
-            out.setFlag(Flag);
-            return true;
+        /**
+        * \headerfile optional_value.hpp <framework/serializable/containers/optional_value.hpp>
+        * \brief Write overload.
+        *
+        * Writes the object state to a flags stream.
+        *
+        * \param in input stream
+        * \param out output object
+        * \return true on success, false on failure
+        */
+        template <
+            int64_t Flag,
+            typename Name,
+            typename Specification,
+            template <typename> class Implementation,
+            typename Input,
+            typename Type>
+        bool write_dispatch (
+            optional_value <Flag, Name, Specification, Implementation>*,
+            Input const& in, output_flags_frame <Type>& out)
+        {
+            if (!interface <Name> (in).check())
+                return true;
+
+            out.set_flag(Flag);
+
+            using value_alias = value_type <Name, Specification, Implementation>;
+            return dispatch_write <value_alias> (in, out);
         }
     }
 }

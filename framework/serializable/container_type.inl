@@ -10,14 +10,16 @@ namespace framework
             template <>
             struct recursive_serializable_specification <pack_container <>>
             {
-                template <typename Input, typename Output>
-                static bool read (Input&, Output&)
+                template <typename... Args>
+                FRAMEWORK_ALWAYS_INLINE
+                static bool read (Args&&...)
                 {
                     return true;
                 }
 
-                template <typename Input, typename Output>
-                static bool write (Input const&, Output&)
+                template <typename... Args>
+                FRAMEWORK_ALWAYS_INLINE
+                static bool write (Args&&...)
                 {
                     return true;
                 }
@@ -26,24 +28,24 @@ namespace framework
             template <typename Head, typename... Tail>
             struct recursive_serializable_specification <pack_container <Head, Tail...>>
             {
-                template <typename Input, typename Output>
-                static bool read (Input& in, Output& out)
+                template <typename... Args>
+                FRAMEWORK_ALWAYS_INLINE
+                static bool read (Args&&... args)
                 {
-                    using ::framework::serializable::dispatch_read;
-                    if (!dispatch_read <Head> (in, out))
+                    if (!dispatch_read <Head> (args...))
                         return false;
 
-                    return recursive_serializable_specification <pack_container <Tail...>>::read(in, out);
+                    return recursive_serializable_specification <pack_container <Tail...>>::read(std::forward <Args> (args)...);
                 }
 
-                template <typename Input, typename Output>
-                static bool write (Input const& in, Output& out)
+                template <typename... Args>
+                FRAMEWORK_ALWAYS_INLINE
+                static bool write (Args&&... args)
                 {
-                    using ::framework::serializable::dispatch_write;
-                    if (!dispatch_write <Head> (in, out)) 
+                    if (!dispatch_write <Head> (args...)) 
                         return false;
 
-                    return recursive_serializable_specification <pack_container <Tail...>>::write(in, out);
+                    return recursive_serializable_specification <pack_container <Tail...>>::write(std::forward <Args> (args)...);
                 }
             };
 

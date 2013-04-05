@@ -13,7 +13,6 @@
 #pragma once
 
 #include <framework/serializable/base_types.hpp>
-#include <framework/serializable/utility/interface.hpp>
 #include <framework/serializable/mutator_type.hpp>
 
 namespace framework
@@ -160,23 +159,14 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Name, 
             typename Specification,
             template <typename> class Interface,
-            bool Default>
-        bool dispatch_read (Input& in, Output& out,
-            value_type <Name, Specification, Interface, Default>*,
-            typename std::enable_if <Default, void>::type* = nullptr)
-        {
-            type_extractor <Specification> value;
-            if (!dispatch_read <Specification> (in, value))
-                return false;
-
-            interface <Name> (out).set(std::move(value));
-            return true;
-        }
+            typename Input,
+            typename Output>
+        bool read_dispatch (
+            value_type <Name, Specification, Interface, true>*,
+            Input&& in, Output&& out);
 
         /**
         * \headerfile value_type.hpp <framework/serializable/value_type.hpp>
@@ -187,22 +177,14 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Name, 
             typename Specification,
             template <typename> class Interface,
-            bool Default>
-        bool dispatch_write (Input const& in, Output& out,
-            value_type <Name, Specification, Interface, Default>*,
-            typename std::enable_if <Default, void>::type* = nullptr)
-        {
-            auto const& value = interface <Name> (in).get();
-            if (!dispatch_write <Specification> (value, out))
-                return false;
-
-            return true;
-        }
+            typename Input,
+            typename Output>
+        bool write_dispatch (
+            value_type <Name, Specification, Interface, true>*,
+            Input&& in, Output&& out);
     }
 }
 

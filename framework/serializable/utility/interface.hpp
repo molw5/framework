@@ -24,6 +24,7 @@ namespace framework
         * implementations may need to protect necessary methods.
         */
         template <typename Name, typename Object>
+        FRAMEWORK_ALWAYS_INLINE
         auto interface (Object& t) -> object_base <Object, Name>&
         {
             return static_cast <object_base <Object, Name>&> (t);
@@ -35,6 +36,7 @@ namespace framework
         * implementations may need to protect necessary methods.
         */
         template <typename Name, typename Object>
+        FRAMEWORK_ALWAYS_INLINE
         auto interface (Object const& t) -> object_base <Object, Name> const&
         {
             return static_cast <object_base <Object, Name> const&> (t);

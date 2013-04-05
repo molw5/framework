@@ -16,6 +16,7 @@ namespace framework
             template <typename T, typename Name, typename Enabler = void>
             struct conditional_check
             {
+                FRAMEWORK_ALWAYS_INLINE
                 static bool check (T const&)
                 {
                     return true;
@@ -31,6 +32,7 @@ namespace framework
                     >::value
                 >::type>
             {
+                FRAMEWORK_ALWAYS_INLINE
                 static bool check (T const& x)
                 {
                     return interface <Name> (x).check();
@@ -43,36 +45,42 @@ namespace framework
                 pack_container <>>
             {
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool less (LhsType const&, RhsType const&)
                 {
                     return false;
                 }
 
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool greater (LhsType const&, RhsType const&)
                 {
                     return false;
                 }
 
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool less_or_equal (LhsType const&, RhsType const&)
                 {
                     return true;
                 }
 
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool greater_or_equal (LhsType const&, RhsType const&)
                 {
                     return true;
                 }
 
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool equal (LhsType const&, RhsType const&)
                 {
                     return true;
                 }
 
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool not_equal (LhsType const&, RhsType const&)
                 {
                     return false;
@@ -87,6 +95,7 @@ namespace framework
                 pack_container <RhsHead, RhsTail...>>
             {
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool less (LhsType const& lhs, RhsType const& rhs)
                 {
                     // The fixed case (where a compatible check() definition does not exist)
@@ -115,6 +124,7 @@ namespace framework
                 }
 
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool greater (LhsType const& lhs, RhsType const& rhs)
                 {
                     return compare <
@@ -124,18 +134,21 @@ namespace framework
                 }
 
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool less_or_equal (LhsType const& lhs, RhsType const& rhs)
                 {
                     return !greater(lhs, rhs);
                 }
 
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool greater_or_equal (LhsType const& lhs, RhsType const& rhs)
                 {
                     return !less(lhs, rhs);
                 }
 
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool equal (LhsType const& lhs, RhsType const& rhs)
                 {
                     // The fixed case (where a compatible check() definition does not exist)
@@ -160,6 +173,7 @@ namespace framework
                 }
 
                 template <typename LhsType, typename RhsType>
+                FRAMEWORK_ALWAYS_INLINE
                 static bool not_equal (LhsType const& lhs, RhsType const& rhs)
                 {
                     return !equal(lhs, rhs);

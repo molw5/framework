@@ -7,8 +7,7 @@
 
 #include <framework/serializable/inline_object.hpp>
 #include <framework/serializable/containers/value.hpp>
-#include <framework/serializable/mutators/little_endian.hpp>
-#include <framework/serializable/mutators/big_endian.hpp>
+#include <framework/serializable/mutators/endian.hpp>
 #include <framework/serializable/mutators/stl_array.hpp>
 #include <framework/serializable/mutators/stl_deque.hpp>
 #include <framework/serializable/mutators/stl_forward_list.hpp>
@@ -76,7 +75,7 @@ SUITE(framework_serializable_mutators_stl_hpp)
 
         inline_object <
             value <NAME("Field 1"), stl_list <int, int>>
-        > out, in{std::forward_as_tuple(1, 2, 3)};
+        > out, in{std::forward_as_tuple(std::forward_as_tuple(1, 2, 3))};
         
         std::stringstream ss;
         CHECK(write(in, ss));
@@ -90,7 +89,7 @@ SUITE(framework_serializable_mutators_stl_hpp)
 
         inline_object <
             value <NAME("Field 1"), stl_multiset <int, int>>
-        > out, in{std::forward_as_tuple(1, 1, 2, 3, 3, 3)};
+        > out, in{std::forward_as_tuple(std::forward_as_tuple(1, 1, 2, 3, 3, 3))};
 
         std::stringstream ss;
         CHECK(write(in, ss));
@@ -119,7 +118,7 @@ SUITE(framework_serializable_mutators_stl_hpp)
 
         inline_object <
             value <NAME("Field 1"), stl_pair <int, int>>
-        > out, in {std::forward_as_tuple(1, 2)};
+        > out, in {std::forward_as_tuple(std::forward_as_tuple(1, 2))};
 
         std::stringstream ss;
         CHECK(write(in, ss));
@@ -169,7 +168,7 @@ SUITE(framework_serializable_mutators_stl_hpp)
 
         inline_object <
             value <NAME("Field 1"), stl_tuple <int, float, double>>
-        > out, in {std::forward_as_tuple(1, 2.0f, 3.0)};
+        > out, in {std::forward_as_tuple(std::forward_as_tuple(1, 2.0f, 3.0))};
         
         std::stringstream ss;
         CHECK(write(in, ss));
@@ -215,7 +214,7 @@ SUITE(framework_serializable_mutators_stl_hpp)
 
         inline_object <
             value <NAME("Field 1"), stl_vector <int, int>>
-        > out, in {std::forward_as_tuple(1, 2, 3)};
+        > out, in {std::forward_as_tuple(std::forward_as_tuple(1, 2, 3))};
 
         std::stringstream ss;
         CHECK(write(in, ss));

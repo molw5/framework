@@ -14,7 +14,7 @@
 
 #include <framework/serializable/base_types.hpp>
 #include <framework/common/common_macros.hpp>
-#include <framework/common/containers/pack_container.hpp>
+#include <framework/common/pack_container.hpp>
 
 namespace framework
 {
@@ -144,16 +144,15 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Specification,
             typename Children,
-            bool Default>
-        bool dispatch_read (Input& in, Output& out,
-            container_type <Specification, Children, Default>*,
-            typename std::enable_if <Default, void>::type* = nullptr)
+            typename... Args>
+        FRAMEWORK_ALWAYS_INLINE
+        bool read_dispatch (
+            container_type <Specification, Children, true>*,
+            Args&&... args)
         {
-            return detail::recursive_serializable_specification <Specification>::read(in, out);
+            return detail::recursive_serializable_specification <Specification>::read(std::forward <Args> (args)...);
         }
 
         /**
@@ -168,16 +167,15 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Specification,
             typename Children,
-            bool Default>
-        bool dispatch_write (Input const& in, Output& out,
-            container_type <Specification, Children, Default>*,
-            typename std::enable_if <Default, void>::type* = nullptr)
+            typename... Args>
+        FRAMEWORK_ALWAYS_INLINE
+        bool write_dispatch (
+            container_type <Specification, Children, true>*,
+            Args&&... args)
         {
-            return detail::recursive_serializable_specification <Specification>::write(in, out);
+            return detail::recursive_serializable_specification <Specification>::write(std::forward <Args> (args)...);
         }
     }
 }

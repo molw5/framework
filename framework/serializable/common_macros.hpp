@@ -12,7 +12,8 @@
 
 #pragma once
 
-#include <framework/common/containers/type_string.hpp>
+#include <framework/common/pack_container.hpp>
+#include <framework/common/type_string.hpp>
 #include <framework/common/preprocessor/string_expansion.hpp>
 
 #ifndef FRAMEWORK_NO_BOOST

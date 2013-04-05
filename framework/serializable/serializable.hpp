@@ -12,9 +12,8 @@
 
 #pragma once
 
-#include <framework/serializable/container_type.hpp>
-#include <framework/serializable/containers/alias.hpp>
 #include <framework/serializable/base_types.hpp>
+#include <framework/serializable/containers/alias.hpp>
 
 namespace framework
 {
@@ -176,6 +175,52 @@ namespace framework
         */
         template <typename Pack, template <typename> class Path>
         using extract_values = typename detail::extract_values_impl <Pack, Path>::type;
+
+        /**
+        *
+        */
+        template <
+            typename Derived,
+            typename Specification,
+            typename Inherited,
+            typename Constructed,
+            typename Visible,
+            typename... Args>
+        bool read_dispatch (
+            serializable_implementation <
+                Derived, 
+                Specification,
+                Inherited,
+                Constructed,
+                Visible,
+                true>*,
+            Args&&... args)
+        {
+            return dispatch_read <Specification> (std::forward <Args> (args)...);
+        }
+
+        /**
+        *
+        */
+        template <
+            typename Derived,
+            typename Specification,
+            typename Inherited,
+            typename Constructed,
+            typename Visible,
+            typename... Args>
+        bool write_dispatch (
+            serializable_implementation <
+                Derived, 
+                Specification,
+                Inherited,
+                Constructed,
+                Visible,
+                true>*,
+            Args&&... args)
+        {
+            return dispatch_write <Specification> (std::forward <Args> (args)...);
+        }
 
         /**
         * \headerfile serializable.hpp <framework/serializable/serializable.hpp>

@@ -59,3 +59,38 @@
             (__clang__ > major || (__clang__ == major && \
                 (__clang_minor__ > minor || (__clang_minor__ == minor && \
                     __clang_patchlevel__ >= patchlevel))))
+
+/**
+* \headerfile common_macros.hpp <framework/common/common_macros.hpp>
+*
+* Compiler specific built-in expect.
+*/
+#ifndef FRAMEWORK_DISABLE_EXPECT
+    #if defined(__GNUC__)
+        #define FRAMEWORK_EXPECT_TRUE(...) __builtin_expect(!!(__VA_ARGS__), 1)
+        #define FRAMEWORK_EXPECT_FALSE(...) __builtin_expect(!!(__VA_ARGS__), 0)
+    #else
+        #define FRAMEWORK_EXPECT_TRUE(...) !!(__VA_ARGS__)
+        #define FRAMEWORK_EXPECT_FALSE(...) !!(__VA_ARGS__)
+    #endif
+#else
+    #define FRAMEWORK_EXPECT_TRUE(...) !!(__VA_ARGS__)
+    #define FRAMEWORK_EXPECT_FALSE(...) !!(__VA_ARGS__)
+#endif
+
+/**
+* \headerfile common_macros.hpp <framework/common/common_macros.hpp>
+*
+* Compiler specific always-inline attributes.
+*/
+#ifndef FRAMEWORK_DISABLE_ALWAYS_INLINE
+    #if defined(__GNUC__)
+        #define FRAMEWORK_ALWAYS_INLINE __attribute__ ((always_inline)) inline
+    #elif defined(_MSC_VER)
+        #define FRAMEWORK_ALWAYS_INLINE __inline
+    #else
+        #define FRAMEWORK_ALWAYS_INLINE inline
+    #endif
+#else
+    #define FRAMEWORK_ALWAYS_INLINE
+#endif

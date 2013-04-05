@@ -40,15 +40,13 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Value,
-            typename Container>
-        bool dispatch_read (Input& in, Output& out, fixed_container <Value, Container>*,
-            typename std::enable_if <
-                std::is_same <Output, Container>::value,
-                void
-            >* = nullptr)
+            typename Container,
+            typename Input,
+            typename Output>
+        bool read_dispatch (
+            fixed_container <Value, Container>*,
+            Input& in, Output& out)
         {
             Container result;
             for (auto& x : result)
@@ -67,15 +65,13 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Value,
-            typename Container>
-        bool dispatch_write (Input const& in, Output& out, fixed_container <Value, Container>*,
-            typename std::enable_if <
-                std::is_same <Input, Container>::value,
-                void
-            >* = nullptr)
+            typename Container,
+            typename Input,
+            typename Output>
+        bool write_dispatch (
+            fixed_container <Value, Container>*,
+            Input const& in, Output& out)
         {
             for (auto const& x : in)
                 if (!dispatch_write <Value> (x, out))

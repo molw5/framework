@@ -1,0 +1,21 @@
+/**
+\page serializable_intro Introduction
+### Primary design goals: ###
+ 1. Arbitrary protocol specification
+ 2. No separation of specification information
+ 3. No duplication of specification information
+
+### Secondary design goals: ###
+ 4. Portability - code must compile on any C++11 compliant compiler; 
+    platform/library specific code must provide alternatives
+ 5. Code economy - trivial methods (operators, constructors, print 
+    methods, ...) should not require object-specific implementations
+ 6. Code efficiency - it should be possible to override the default 
+    behaviour of arbitrarily specific combinations of operators
+ 7. Zero overhead - the abstractions used here should introduce no 
+    intrinsic overhead over an equivalent operation on a raw C structure
+
+### Existing implementations: ###
+ - Boost.Serialization - fails primary goals 2 and 3, arguably fails 1
+ - Google Protocol Buffers - fails primary goal 1
+**/

@@ -55,7 +55,7 @@ namespace framework
         * \endcode
         */
         template <typename... Types>
-        class inline_object final : 
+        class inline_object : 
             public serializable <inline_object <Types...>, Types...>,
             public comparable <inline_object <Types...>>
         {
@@ -63,10 +63,11 @@ namespace framework
                 DEFINE_BASE_TEMPLATE(inline_object <Types...>);
 
             public:
-                /**
-                * \brief Default constructor.
-                */
                 inline_object () = default;
+                inline_object (inline_object const&) = default;
+                inline_object (inline_object&&) = default;
+                inline_object& operator= (inline_object const&) = default;
+                inline_object& operator= (inline_object&&) = default;
 
                 /**
                 * \brief Base constructor forwarder.
@@ -77,6 +78,33 @@ namespace framework
                 {
                 }
 
+                /**
+                * \brief Explicit default constructor overload.
+                */
+                inline_object (std::tuple <>)
+                    : inline_object ()
+                {
+                }
+                
+                /**
+                * \brief Tuple constructor.
+                */
+                template <typename... Args>
+                inline_object (std::tuple <Args...>&& args)
+                    : inline_object (
+                        std::forward <std::tuple <Args...>> (args), 
+                        static_cast <make_indices <sizeof... (Args)>*> (nullptr))
+                {
+                }
+
+            private:
+                template <typename... Args, typename... Indices>
+                inline_object (std::tuple <Args...> args, pack_container <Indices...>*)
+                    : serializable <inline_object <Types...>, Types...> (std::forward <Args> (std::get <Indices::value> (args))...)
+                {
+                }
+
+           public:
                 /**
                 * \brief Get forwarder.
                 */

@@ -50,17 +50,14 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Value,
             type_extractor <Value> Terminator,
-            typename Container>
-        bool dispatch_read (Input& in, Output& out,
+            typename Container,
+            typename Input,
+            typename Output>
+        bool read_dispatch (
             terminated_container <Value, Terminator, Container>*,
-            typename std::enable_if <
-                std::is_same <Output, Container>::value,
-                void
-            >::type* = nullptr)
+            Input& in, Output& out)
         {
             type_extractor <Value> x;
             if (!dispatch_read <Value> (in, x))
@@ -93,17 +90,14 @@ namespace framework
         * \return true on success, false on failure
         */
         template <
-            typename Input,
-            typename Output,
             typename Value,
             type_extractor <Value> Terminator,
-            typename Container>
-        bool dispatch_write (Input const& in, Output& out,
+            typename Container,
+            typename Input,
+            typename Output>
+        bool write_dispatch (
             terminated_container <Value, Terminator, Container>*,
-            typename std::enable_if <
-                std::is_same <Input, Container>::value,
-                void
-            >::type* = nullptr)
+            Input const& in, Output& out)
         {
             for (auto const& x : in)
             {

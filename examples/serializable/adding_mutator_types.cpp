@@ -9,7 +9,7 @@
 using ::framework::serializable::type_extractor;
 using ::framework::serializable::mutator_type;
 
-// Define the buffer mutator - may be placed into an arbitrary namespace
+// Define the buffer mutator
 template <typename SizeType>
 struct buffer : mutator_type <
     // Define the child type, used in the definition of the underlying type.  In this
@@ -18,41 +18,49 @@ struct buffer : mutator_type <
 {
 };
 
-// Read overload
-template <typename Input, typename SizeType>
-bool dispatch_read (Input& in, type_extractor <buffer <SizeType>>& out, buffer <SizeType>*)
+// Read overload - in general these methods should avoid unnecessary restrictions on the
+// input types.  For example, stl_vector <int, int> should accept any object that behaves
+// like a vector, not just type_extractor <stl_vector <int, int>>.
+template <
+    typename Size,
+    typename Input,
+    typename Output>
+bool read_dispatch (
+    buffer <Size>*,
+    Input&& in, Output&& out)
 {
     using ::framework::serializable::dispatch_read;
+    using ::framework::serializable::stream_read;
 
     // Read the buffer's size
-    type_extractor <SizeType> size;
-    if (!dispatch_read <SizeType> (in, size))
+    type_extractor <Size> size;
+    if (!dispatch_read <Size> (in, size))
         return false;
 
     // Read the buffer's data
     out.resize(size);
-    if (!in.read(reinterpret_cast <char*> (&out[0]), out.size()))
-        return false;
-
-    return true;
+    return stream_read(in, reinterpret_cast <char*> (&out[0]), out.size());
 }
-        
+
 // Write overload
-template <typename Output, typename SizeType>
-bool dispatch_write (type_extractor <buffer <SizeType>> const& in, Output& out, buffer <SizeType>*)
+template <
+    typename Size,
+    typename Input,
+    typename Output>
+bool write_dispatch (
+    buffer <Size>*,
+    Input&& in, Output&& out)
 {
     using ::framework::serializable::dispatch_write;
+    using ::framework::serializable::stream_write;
 
     // Write the buffer's size
-    type_extractor <SizeType> const& size = in.size();
-    if (!dispatch_write <SizeType> (size, out))
+    type_extractor <Size> const& size = in.size();
+    if (!dispatch_write <Size> (size, out))
         return false;
 
     // Write the buffer's data
-    if (!out.write(reinterpret_cast <char const*> (&in[0]), in.size()))
-        return false;
-
-    return true;
+    return stream_write(out, reinterpret_cast <char const*> (&in[0]), in.size());
 }
 
 int main ()

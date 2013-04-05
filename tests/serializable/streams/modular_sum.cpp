@@ -8,8 +8,7 @@
 #include <framework/serializable/base_types.hpp>
 #include <framework/serializable/inline_object.hpp>
 #include <framework/serializable/containers/value.hpp>
-#include <framework/serializable/mutators/little_endian.hpp>
-#include <framework/serializable/mutators/big_endian.hpp>
+#include <framework/serializable/mutators/endian.hpp>
 #include <framework/serializable/common_macros.hpp>
 #include <framework/serializable/streams/modular_sum.hpp>
 

@@ -16,7 +16,7 @@ using ::framework::serializable::inline_object;
 using ::framework::serializable::extract_values;
 using ::framework::serializable::little_endian;
 using ::framework::serializable::comparable;
-using ::framework::index_container;
+using ::framework::pack_container;
 using ::framework::make_indices;
 
 // Second approach - bind the object to a wrapper object
@@ -139,14 +139,14 @@ struct bind_object :
         }
 
     private:
-        template <typename T, std::size_t I>
+        template <typename T, typename I>
         struct passthrough
         {
             using type = T;
         };
 
-        template <typename T, std::size_t... Indices>
-        bind_object (T& t, index_container <Indices...>*)
+        template <typename T, typename... Indices>
+        bind_object (T& t, pack_container <Indices...>*)
             : serializable <bind_object <Args...>, Args...> (static_cast <typename passthrough <T, Indices>::type&> (t)...)
         {
         }
@@ -157,18 +157,20 @@ struct bind_object :
 
 // Define a template used to bind a specification to a particular structure
 #define BIND(Specification, Structure) \
-template <typename Input> \
-bool custom_read (Input& in, Structure& out) \
+template <typename Input, typename Output> \
+bool read_dispatch ( \
+    Structure*, \
+    Input&& in, Output&& out) \
 { \
-    Specification <link_implementation> wrapper(out); \
-    return read(in, wrapper); \
+    return read(std::forward <Input> (in), Specification <link_implementation> {out}); \
 } \
 \
-template <typename Output> \
-bool custom_write (Structure const& in, Output& out) \
+template <typename Input, typename Output> \
+bool write_dispatch ( \
+    Structure*, \
+    Input&& in, Output&& out) \
 { \
-    Specification <const_link_implementation> wrapper(in); \
-    return write(wrapper, out); \
+    return write(Specification <const_link_implementation> {in}, std::forward <Output> (out)); \
 }
 
 // Usage example

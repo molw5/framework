@@ -17,8 +17,7 @@
 #include <framework/serializable/inline_object.hpp>
 #include <framework/serializable/containers/alias.hpp>
 #include <framework/serializable/containers/value.hpp>
-#include <framework/serializable/mutators/little_endian.hpp>
-#include <framework/serializable/mutators/big_endian.hpp>
+#include <framework/serializable/mutators/endian.hpp>
 #include <framework/serializable/utility/common.hpp>
 #include <framework/serializable/utility/comparable.hpp>
 

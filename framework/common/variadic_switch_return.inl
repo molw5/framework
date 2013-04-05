@@ -9,24 +9,15 @@ namespace framework
         BOOST_PP_COMMA_IF(n) text c_##n
 
 #define FRAMEWORK_VARIADIC_CASE(z, n, text) \
-        case c_##n: return text.template operator() <c_##n> (std::forward <Args> (args)...);
+        case c_##n::value: return text.template operator() <c_##n::value> (std::forward <Args> (args)...);
 
 #define FRAMEWORK_VARIADIC_SWITCH(n) \
-        template < \
-            typename CaseType \
-            BOOST_PP_COMMA_IF(n) BOOST_PP_REPEAT(n, FRAMEWORK_VARIADIC_CASE_LIST, CaseType)> \
-        struct variadic_switch_return_impl < \
-            value_container < \
-                CaseType \
-                BOOST_PP_COMMA_IF(n) BOOST_PP_REPEAT(n, FRAMEWORK_VARIADIC_CASE_LIST, )>> \
+        template <BOOST_PP_REPEAT(n, FRAMEWORK_VARIADIC_CASE_LIST, typename)> \
+        struct variadic_switch_return_impl <pack_container <BOOST_PP_REPEAT(n, FRAMEWORK_VARIADIC_CASE_LIST, )>> \
         { \
-            template < \
-                typename Handler, \
-                typename... Args> \
-            static auto run ( \
-                CaseType const& index, \
-                Handler&& handler, \
-                Args&&... args) -> \
+            template <typename Handler, typename Index, typename... Args> \
+            FRAMEWORK_ALWAYS_INLINE \
+            static auto run (Handler&& handler, Index&& index, Args&&... args) -> \
             decltype(handler(std::forward <Args> (args)...)) \
             { \
                 switch (index) \
@@ -54,23 +45,12 @@ namespace framework
 #undef BOOST_PP_LOCAL_LIMITS
 #undef BOOST_PP_LOCAL_MACRO
 
-        template <
-            typename CaseType,
-            BOOST_PP_REPEAT(FRAMEWORK_VARIADIC_SWITCH_LIMIT, FRAMEWORK_VARIADIC_CASE_LIST, CaseType),
-            CaseType... Tail>
-        struct variadic_switch_return_impl <
-            value_container <
-                CaseType,
-                BOOST_PP_REPEAT(FRAMEWORK_VARIADIC_SWITCH_LIMIT, FRAMEWORK_VARIADIC_CASE_LIST, ),
-                Tail...>>
+        template <BOOST_PP_REPEAT(FRAMEWORK_VARIADIC_SWITCH_LIMIT, FRAMEWORK_VARIADIC_CASE_LIST, typename), typename... Tail>
+        struct variadic_switch_return_impl <pack_container <BOOST_PP_REPEAT(FRAMEWORK_VARIADIC_SWITCH_LIMIT, FRAMEWORK_VARIADIC_CASE_LIST, ), Tail...>>
         {
-            template <
-                typename Handler,
-                typename... Args>
-            static auto run (
-                CaseType const& index,
-                Handler&& handler,
-                Args&&... args) ->
+            template <typename Handler, typename Index, typename... Args>
+            FRAMEWORK_ALWAYS_INLINE
+            static auto run (Handler&& handler, Index&& index, Args&&... args) ->
             decltype(handler(std::forward <Args> (args)...))
             {
                 switch (index)
@@ -78,9 +58,9 @@ namespace framework
                     BOOST_PP_REPEAT(FRAMEWORK_VARIADIC_SWITCH_LIMIT, FRAMEWORK_VARIADIC_CASE, handler)
                     
                     default: 
-                        return variadic_switch_return_impl <value_container <CaseType, Tail...>>::run(
-                            index,
+                        return variadic_switch_return_impl <pack_container <Tail...>>::run(
                             std::forward <Handler> (handler),
+                            std::forward <Index> (index),
                             std::forward <Args> (args)...);
                 }
             }

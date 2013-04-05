@@ -46,7 +46,7 @@ SUITE(framework_variadic_switch_fallthrough_hpp)
             int x1{0}, x2{0};
 
             switch_check(i, x1);
-            variadic_switch_fallthrough <make_values <std::size_t, 5>> (i, switch_value(), x2);
+            variadic_switch_fallthrough <make_values <std::size_t, 5>> (switch_value(), i, x2);
 
             CHECK(x1 == x2);
         }

@@ -13,8 +13,6 @@
 #include <framework/serializable/containers/optional_field.hpp>
 #include <framework/serializable/common_macros.hpp>
 
-template <typename... Types> struct print_pack;
-
 SUITE(framework_serializable_containers_optional_field_hpp)
 {
     TEST(Basic)

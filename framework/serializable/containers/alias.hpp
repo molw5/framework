@@ -48,10 +48,18 @@
 
 #pragma once
 
+#include <framework/serializable/container_type.hpp>
+
 namespace framework
 {
     namespace serializable
     {
+        namespace detail
+        {
+            template <typename Pack>
+            struct make_alias_impl;
+        }
+
         /**
         * \struct alias alias.hpp <framework/serializable/alias.hpp>
         * \brief Serializable alias wrapper.
@@ -64,5 +72,10 @@ namespace framework
             pack_container <Specification...>>
         {
         };
+
+        template <typename Pack>
+        using make_alias = typename detail::make_alias_impl <Pack>::type;
     }
 }
+
+#include <framework/serializable/containers/alias.inl>
