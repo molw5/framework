@@ -99,8 +99,8 @@ namespace framework
                 ~default_optional_value () = default;
 
             protected:
-                bool p_bSet {false};
                 value_type p_tValue {};
+                bool p_bSet {false};
         };
 
         /**

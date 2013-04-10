@@ -121,7 +121,7 @@ namespace framework
         *
         * Gets the base type associated with \c Name in \c T.
         *
-        * \pre is_derived_type <T>::value == true
+        * \pre is_derived_type \<T\>\::value == true
         */
         template <typename T, typename Name>
         using object_base = typename detail::object_base_impl <T, Name>::type;
@@ -131,7 +131,7 @@ namespace framework
         *
         * Constructs a \c pack_container of every visible value name in \c T.
         *
-        * \pre is_derived_type <T>::value == true
+        * \pre is_derived_type \<T\>\::value == true
         */
         template <typename T>
         using object_names = typename detail::object_names_impl <T>::type;
@@ -141,7 +141,7 @@ namespace framework
         *
         * Gets the specification associated with T.
         *
-        * \pre is_derived_type <T>::value == true
+        * \pre is_derived_type \<T\>\::value == true
         */
         template <typename T>
         using object_specification = typename detail::object_specification_impl <T>::type;

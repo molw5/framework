@@ -224,7 +224,7 @@ namespace framework
 
             std::bitset <required_fields::size> required;
             auto const begin = in.tellg();
-            while (in.tellg() - begin < size)
+            while (static_cast <uint64_t> (in.tellg() - begin) < size)
             {
                 uint64_t field_tag;
                 if (FRAMEWORK_EXPECT_FALSE(!serializable::dispatch_read <uint64> (in, field_tag)))
@@ -236,7 +236,7 @@ namespace framework
                     return false;
             }
 
-            if (FRAMEWORK_EXPECT_FALSE(in.tellg() - begin != size))
+            if (FRAMEWORK_EXPECT_FALSE(static_cast <uint64_t> (in.tellg() - begin) != size))
                 return false;
 
             return required.all();

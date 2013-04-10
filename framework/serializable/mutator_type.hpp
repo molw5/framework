@@ -100,7 +100,7 @@ namespace framework
         *
         * Retrieves a mutator's child type.
         *
-        * \pre is_mutator_type <T>::value == true
+        * \pre is_mutator_type \<T\>\::value == true
         */
         template <typename T>
         using mutator_child = typename detail::mutator_child_impl <T>::type;
@@ -113,7 +113,7 @@ namespace framework
         * \code
         * typename type_extractor <typename get_mutator_child <T>::type>::type
         * \endcode
-        * if \T is a mutator type, and \c T otherwise.
+        * if \c T is a mutator type, and \c T otherwise.
         */
         template <typename T>
         using type_extractor = typename detail::type_extractor_impl <T>::type;

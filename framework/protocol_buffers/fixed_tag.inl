@@ -5,6 +5,8 @@ namespace framework
 {
     namespace protocol_buffers
     {
+// Doxygen appears to fail parsing the following, suppressing the warnings (no documentation)
+#ifndef DOXYGEN
         template <unsigned long ID, unsigned char WireType>
         struct fixed_tag <ID, WireType,
             typename std::enable_if <
@@ -72,6 +74,7 @@ namespace framework
                     (((uint64_t(ID) >> 18) & 0x7F) << 24)
             };
         };
+#endif
 
         template <unsigned long ID, unsigned char WireType, typename Enabler>
         struct fixed_tag
@@ -107,6 +110,7 @@ namespace framework
                 FRAMEWORK_ALWAYS_INLINE
                 static bool run (char* begin, char* end, char*& it)
                 {
+                    (void)end; // suppress warnings
                     constexpr uint8_t raw[sizeof...(Indices)] = {((Tag::buffer >> (Indices::value * 8)) & 0xFF)...};
                     assert(static_cast <std::size_t> (end - begin) >= sizeof...(Indices));
                     memcpy(begin, &raw[0], sizeof...(Indices));
@@ -124,6 +128,7 @@ namespace framework
                 FRAMEWORK_ALWAYS_INLINE
                 static bool run (char const* begin, char const* end, char const*& it)
                 {
+                    (void)end; // suppress warnings
                     constexpr uint8_t raw[sizeof...(Indices)] = {((Tag::buffer >> (Indices::value * 8)) & 0xFF)...};
                     assert(static_cast <std::size_t> (end - begin) >= sizeof...(Indices));
                     

@@ -119,7 +119,7 @@ namespace framework
         *
         * Retrieves a value type's name.
         *
-        * \pre is_value_type <T>::value == true
+        * \pre is_value_type \<T\>\::value == true
         */
         template <typename T>
         using value_name = typename detail::value_name_impl <T>::type;
@@ -129,7 +129,7 @@ namespace framework
         *
         * Retrieves a value type's specification.
         *
-        * \pre is_value_type <T>::value == true
+        * \pre is_value_type \<T\>\::value == true
         */
         template <typename T>
         using value_specification = typename detail::value_specification_impl <T>::type;
@@ -140,7 +140,7 @@ namespace framework
         * Instantiates a value type's implementation with the parameter \c Derived,
         * storing the result in \c type.
         *
-        * \pre is_value_type <T>::value == true
+        * \pre is_value_type \<T\>\::value == true
         */
         template <typename T, typename Derived>
         using value_implementation = typename detail::value_implementation_impl <T, Derived>::type;

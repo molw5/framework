@@ -137,9 +137,16 @@ namespace framework
                 FRAMEWORK_ALWAYS_INLINE
                 static bool run (std::size_t value, Output&& out)
                 {
+#ifdef __clang__
+ #pragma clang diagnostic push
+ #pragma clang diagnostic ignored "-Wshift-count-overflow"
+#endif
                     uint8_t const raw[Size] = {
                         static_cast <uint8_t> ((value >> (Indices::value*7)) | 0x80)...,
                         static_cast <uint8_t> ((value >> ((1+Size)*7)) & 0x7F)};
+#ifdef __clang__
+ #pragma clang diagnostic pop
+#endif
 
                     return serializable::stream_write <Size> (out, reinterpret_cast <char const*> (&raw[0]));
                 }
@@ -147,9 +154,17 @@ namespace framework
                 FRAMEWORK_ALWAYS_INLINE
                 static bool run (std::size_t value, char* begin, char* end, char*& it)
                 {
+                    (void)end; // suppress warnings
+#ifdef __clang__
+ #pragma clang diagnostic push
+ #pragma clang diagnostic ignored "-Wshift-count-overflow"
+#endif
                     uint8_t const raw[Size] = {
                         static_cast <uint8_t> ((value >> (Indices::value*7)) | 0x80)...,
                         static_cast <uint8_t> ((value >> ((1+Size)*7)) & 0x7F)};
+#ifdef __clang__
+ #pragma clang diagnostic pop
+#endif
 
                     assert(static_cast <std::size_t> (end - begin) >= Size);
                     memcpy(begin, &raw[0], Size);
@@ -165,8 +180,15 @@ namespace framework
             static_assert(Size > 0 && Size <= 10, "Invalid fixed varint size");
             enum{ max_size = (2ull << (7*Size)) - 1 };
 
+#ifdef __clang__
+ #pragma clang diagnostic push
+ #pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
             if (FRAMEWORK_EXPECT_FALSE(value > max_size))
                 return false;
+#ifdef __clang__
+ #pragma clang diagnostic pop
+#endif
 
             return detail::fixed_length_impl <Size>::run(value, std::forward <Output> (out));
         }
@@ -178,8 +200,15 @@ namespace framework
             static_assert(Size > 0 && Size <= 10, "Invalid fixed varint size");
             enum{ max_size = (2ull << (7*Size)) - 1 };
 
+#ifdef __clang__
+ #pragma clang diagnostic push
+ #pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#endif
             if (FRAMEWORK_EXPECT_FALSE(value > max_size))
                 return false;
+#ifdef __clang__
+ #pragma clang diagnostic pop
+#endif
 
             return detail::fixed_length_impl <Size>::run(value, begin, end, it);
         }

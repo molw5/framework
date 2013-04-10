@@ -3,6 +3,7 @@ Framework
 Provides the following header-only libraries:
 
   - serializable
+  - protocol_buffers
 
 see http://molw5.github.com/framework for associated documentation.
 

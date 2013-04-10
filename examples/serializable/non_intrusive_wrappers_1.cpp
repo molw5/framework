@@ -18,18 +18,18 @@ using ::framework::serializable::type_extractor;
 
 // Value type requires an implementation template, provide a void alias
 template <typename T>
-using link_implementation = void;
+using olink_implementation = void;
 
-// Define a value type used to link a data member to a particular specification
+// Define a value type used to olink a data member to a particular specification
 template <typename Type, Type Offset, typename Specification>
-struct link : value_type <Type, Specification, link_implementation, false>
+struct olink : value_type <Type, Specification, olink_implementation, false>
 {
 };
 
-// Define a template to provide link with the required parameters
+// Define a template to provide olink with the required parameters
 #define LINK(Member) decltype(&Member), &Member
 
-// Implement the serialization of the 'link' data member
+// Implement the serialization of the 'olink' data member
 template <
     typename Type,
     Type Offset,
@@ -37,7 +37,7 @@ template <
     typename Input,
     typename Output>
 bool read_dispatch (
-    link <Type, Offset, Specification>*,
+    olink <Type, Offset, Specification>*,
     Input&& in, Output&& out)
 {
     using ::framework::serializable::dispatch_read;
@@ -57,7 +57,7 @@ template <
     typename Input,
     typename Output>
 bool write_dispatch (
-    link <Type, Offset, Specification>*,
+    olink <Type, Offset, Specification>*,
     Input&& in, Output&& out)
 {
     using ::framework::serializable::dispatch_write;
@@ -96,9 +96,9 @@ struct Object
 };
 
 using ObjectSpecification = alias <
-    link <LINK(Object::x), little_endian <uint32_t>>,
-    link <LINK(Object::y), little_endian <uint32_t>>,
-    link <LINK(Object::z), little_endian <uint32_t>>>;
+    olink <LINK(Object::x), little_endian <uint32_t>>,
+    olink <LINK(Object::y), little_endian <uint32_t>>,
+    olink <LINK(Object::z), little_endian <uint32_t>>>;
 
 BIND(ObjectSpecification, Object)
 

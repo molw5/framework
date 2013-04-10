@@ -113,7 +113,7 @@ namespace framework
         * \brief Field less than.
         *
         * Compares the field number associated to Lhs with that of Rhs.  This expression evaluates to std::true_type
-        * iff field_number <Lhs>::value < field_number <Rhs>::value - otherwise, evaluates to std::false_type.
+        * iff field_number \<Lhs\>\::value \< field_number \<Rhs\>\::value - otherwise, evaluates to std::false_type.
         */
         template <typename Lhs, typename Rhs>
         using field_less_than = value_less_than <field_number <Lhs>, field_number <Rhs>>;
@@ -121,8 +121,8 @@ namespace framework
         /**
         * \brief Field matcher.
         *
-        * Provides a child type (field_matcher <...>::type) that evaluates to std::true_type iff 
-        * field_number <T>::value == Number - otherwise, evaluates to std::false_type.
+        * Provides a child type (field_matcher \<...\>\::type) that evaluates to std::true_type iff 
+        * field_number \<T\>\::value == Number - otherwise, evaluates to std::false_type.
         */
         template <uint64_t Number>
         struct field_matcher

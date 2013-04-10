@@ -124,7 +124,8 @@ namespace framework
                 * Sets the input iterator to an offset relative to the provided position (dir).  Note that the definition 
                 * used here may not be compatible with that of basic_istream::seekg.
                 *
-                * \param pos new input iterator position
+                * \param off input iterator offset
+                * \param dir reference position
                 * \return true on success, false on failure
                 * 
                 */

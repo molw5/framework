@@ -37,11 +37,10 @@ namespace framework{
     namespace serializable{
         template <
             typename Size,
-            typename Input,
-            typename Output>
+            typename Input>
         bool read_dispatch (
             stl_vector <Size, s>*,
-            Input&& in, Output&& out)
+            Input&& in, type_extractor <stl_vector <Size, s>>& out)
         {
             type_extractor <Size> size;
             if (!dispatch_read <Size> (in, size))
@@ -53,11 +52,10 @@ namespace framework{
 
         template <
             typename Size,
-            typename Input,
             typename Output>
         bool write_dispatch (
             stl_vector <Size, s>*,
-            Input&& in, Output&& out)
+            type_extractor <stl_vector <Size, s>>& in, Output&& out)
         {
             type_extractor <Size> const& size = in.size();
             if (!dispatch_write <Size> (size, out))

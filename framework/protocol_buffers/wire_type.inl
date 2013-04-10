@@ -217,6 +217,7 @@ namespace framework
             Input in,
             char* begin, char* end, char*& it)
         {
+            (void)end; // suppress warnings
             enum{ size = sizeof(in) };
 
             assert(end - begin >= size);

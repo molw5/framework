@@ -28,7 +28,7 @@ template <
     Type Offset,
     typename Specification,
     template <typename> class Implementation>
-struct link_implementation_wrapper
+struct olink_implementation_wrapper
 {
     template <typename Derived>
     struct parameters
@@ -55,10 +55,10 @@ struct extract_pointer_types <Type Class::*>
     using class_type = Class;
 };
 
-// Define the link implementation - used to bind a member variable of an object to 
+// Define the olink implementation - used to bind a member variable of an object to 
 // a serializable value type
 template <typename T>
-struct link_implementation
+struct olink_implementation
 {
     private:
         using class_type = typename extract_pointer_types <typename T::offset_type>::class_type;
@@ -69,7 +69,7 @@ struct link_implementation
         void set (value_type value) { p_tValue = std::move(value); }
 
     public:
-        link_implementation (class_type& t)
+        olink_implementation (class_type& t)
             : p_tValue(t.*T::offset_value)
         {
         }
@@ -80,7 +80,7 @@ struct link_implementation
 
 // As above, but binds a constant member variable to a serializable value type
 template <typename T>
-struct const_link_implementation
+struct const_olink_implementation
 {
     private:
         using class_type = typename extract_pointer_types <typename T::offset_type>::class_type;
@@ -90,7 +90,7 @@ struct const_link_implementation
         value_type const& get () const { return p_tValue; }
 
     public:
-        const_link_implementation (class_type const& t)
+        const_olink_implementation (class_type const& t)
             : p_tValue(t.*T::offset_value)
         {
         }
@@ -105,16 +105,16 @@ struct member_name
 {
 };
 
-// Define a value type used to link a data member to a particular specification
+// Define a value type used to olink a data member to a particular specification
 template <
     typename Type,
     Type Offset,
     typename Specification,
-    template <typename> class Implementation = link_implementation>
-struct link : value_type <
+    template <typename> class Implementation = olink_implementation>
+struct olink : value_type <
     member_name <Type, Offset>,
     Specification,
-    link_implementation_wrapper <
+    olink_implementation_wrapper <
         Type,
         Offset,
         Specification,
@@ -152,7 +152,7 @@ struct bind_object :
         }
 };
 
-// Define a template to provide link with the required parameters
+// Define a template to provide olink with the required parameters
 #define LINK(Member) decltype(&Member), &Member
 
 // Define a template used to bind a specification to a particular structure
@@ -162,7 +162,7 @@ bool read_dispatch ( \
     Structure*, \
     Input&& in, Output&& out) \
 { \
-    return read(std::forward <Input> (in), Specification <link_implementation> {out}); \
+    return read(std::forward <Input> (in), Specification <olink_implementation> {out}); \
 } \
 \
 template <typename Input, typename Output> \
@@ -170,7 +170,7 @@ bool write_dispatch ( \
     Structure*, \
     Input&& in, Output&& out) \
 { \
-    return write(Specification <const_link_implementation> {in}, std::forward <Output> (out)); \
+    return write(Specification <const_olink_implementation> {in}, std::forward <Output> (out)); \
 }
 
 // Usage example
@@ -184,9 +184,9 @@ struct Object
 
 template <template <typename> class Implementation>
 using ObjectSpecification = bind_object <
-    link <LINK(Object::x), little_endian <uint32_t>, Implementation>,
-    link <LINK(Object::y), little_endian <uint32_t>, Implementation>,
-    link <LINK(Object::z), little_endian <uint32_t>, Implementation>>;
+    olink <LINK(Object::x), little_endian <uint32_t>, Implementation>,
+    olink <LINK(Object::y), little_endian <uint32_t>, Implementation>,
+    olink <LINK(Object::z), little_endian <uint32_t>, Implementation>>;
 
 BIND(ObjectSpecification, Object)
 
@@ -196,7 +196,7 @@ bool compare_test (Object const& lhs, Object const& rhs) __attribute__ ((noinlin
 
 int main ()
 {
-    using wrapper = ObjectSpecification <link_implementation>;
+    using wrapper = ObjectSpecification <olink_implementation>;
     // Create an object
     Object o1 {1, 2, 3};
 
@@ -227,6 +227,6 @@ bool compare_control (Object const& lhs, Object const& rhs)
 
 bool compare_test (Object const& lhs, Object const& rhs)
 {
-    using wrapper = ObjectSpecification <const_link_implementation>;
+    using wrapper = ObjectSpecification <const_olink_implementation>;
     return wrapper(lhs) == wrapper(rhs);
 }

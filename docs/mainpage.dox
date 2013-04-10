@@ -13,4 +13,11 @@
 *  - \ref serializable_custom_implementation
 * - \subpage serializable_discussion
 *  - \ref serializable_zero_overhead
+*
+* ## Protocol Buffers ##
+* Simple protocol buffers implementation
+* - \subpage protocol_buffers_license
+* - \subpage protocol_buffers_tutorial
+*  - \ref protocol_buffers_simple
+*  - \ref protocol_buffers_nested
 */

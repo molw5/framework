@@ -1,7 +1,7 @@
 CXX           = clang++
 CXX_COMPILE   = $(CXX) -c $(CXX_CFLAGS)
 CXX_LINK	  = $(CXX) $(CXX_LDFLAGS)
-CXX_CFLAGS	  = -std=c++11 -pedantic -Wall -Wextra -Werror -Wno-trigraphs -I./
+CXX_CFLAGS	  = -std=c++11 -pedantic -Wall -Wextra -Werror -I./
 CXX_LDFLAGS   =
 
 UNAME := $(shell uname -o)

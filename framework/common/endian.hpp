@@ -35,29 +35,6 @@
 */
 #define FRAMEWORK_PDP_ENDIAN 3
 
-#ifdef DOXYGEN
-    #error "Documentation only"
-    /**
-    * \headerfile endian.hpp <framework/common/endian.hpp>
-    * \brief Host endianness.
-    *
-    * Defines the host endianness assumed by this framework.  This value may be defined explicitly 
-    * or deduced from a platform-specific package like \c endian.h.  Must be set to one of the 
-    * \c FRAMEWORK_*_ENDIAN macro values provides in this documentation.
-    */
-    #define FRAMEWORK_HOST_ENDIANNESS
-    
-    /**
-    * \headerfile endian.hpp <framework/common/endian.hpp>
-    * \brief Host float endianness.
-    *
-    * Defines the host floating point endianness assumed by this framework.  This value may be 
-    * defined explicitly or deduced from a platform-specific package like \c endian.h.  Must be set 
-    * to one of the \c FRAMEWORK_*_ENDIAN macro values provides in this documentation.
-    */
-    #define FRAMEWORK_HOST_FLOAT_ENDIANNESS
-#endif
-
 #ifndef FRAMEWORK_HOST_ENDIANNESS
     // TODO: This test is not sufficint to guarentee the existance to endian.h - improve if possible
     #ifdef __unix__
@@ -188,3 +165,29 @@ namespace framework
 }
 
 #include <framework/common/endian.inl>
+
+// Note - these definitions need to be placed at the end of the file to suppress doxygen warnings.
+// Removing the definitions below with #undef failed.
+#ifdef DOXYGEN
+    #error "Documentation only"
+
+    /**
+    * \headerfile endian.hpp <framework/common/endian.hpp>
+    * \brief Host endianness.
+    *
+    * Defines the host endianness assumed by this framework.  This value may be defined explicitly 
+    * or deduced from a platform-specific package like \c endian.h.  Must be set to one of the 
+    * \c FRAMEWORK_*_ENDIAN macro values provides in this documentation.
+    */
+    #define FRAMEWORK_HOST_ENDIANNESS
+    
+    /**
+    * \headerfile endian.hpp <framework/common/endian.hpp>
+    * \brief Host float endianness.
+    *
+    * Defines the host floating point endianness assumed by this framework.  This value may be 
+    * defined explicitly or deduced from a platform-specific package like \c endian.h.  Must be set 
+    * to one of the \c FRAMEWORK_*_ENDIAN macro values provides in this documentation.
+    */
+    #define FRAMEWORK_HOST_FLOAT_ENDIANNESS
+#endif

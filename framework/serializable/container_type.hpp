@@ -117,7 +117,7 @@ namespace framework
         *
         * Retrieves a container type's specification.
         *
-        * \pre is_container_type <T>::value == true
+        * \pre is_container_type \<T\>\::value == true
         */
         template <typename T>
         using container_specification = typename detail::container_specification_impl <T>::type;
@@ -127,7 +127,7 @@ namespace framework
         *
         * Retrieves a container type's children.
         *
-        * \pre is_container_type <T>::value == true
+        * \pre is_container_type \<T\>\::value == true
         */
         template <typename T>
         using container_children = typename detail::container_children_impl <T>::type;
@@ -136,11 +136,10 @@ namespace framework
         * \headerfile container_type.hpp <framework/serializable/container_type.hpp>
         * \brief Default read overload.
         *
-        * Serializes each element of \c{container_children <Specification>} in the order it
+        * Serializes each element of container_children \<Specification\> in the order it
         * appears.
         *
-        * \param in input stream
-        * \param out output container
+        * \param args deserialization arguments, usually an input stream followed by an output container
         * \return true on success, false on failure
         */
         template <
@@ -159,11 +158,10 @@ namespace framework
         * \headerfile container_type.hpp <framework/serializable/container_type.hpp>
         * \brief Default write overload.
         *
-        * Serializes each element of \c{container_children <Specification>} in the order it
+        * Serializes each element of container_children \<Specification\> in the order it
         * appears.
         *
-        * \param in input container
-        * \param out output stream
+        * \param args serialization arguments, usually an input container followed by an output stream
         * \return true on success, false on failure
         */
         template <

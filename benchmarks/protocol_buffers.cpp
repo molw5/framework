@@ -356,19 +356,22 @@ void benchmark (std::string const& name, std::size_t dataSize, T action)
     iterations = (int) ((TARGET_TIME_MS / (double) elapsed) * iterations);
     elapsed = timeAction(action, iterations);
 
+    auto const data = static_cast <double> (iterations) * static_cast <double> (dataSize) / (1024.0 * 1024.0);
+    auto const time = static_cast <double> (elapsed) / 1000.0;
+
     std::cout << name << ": " << iterations << " iterations in "
-        << elapsed/1000.0f << "s; "
-        << (iterations * dataSize) / (elapsed * 1024 * 1024 / 1000.0f) << "MB/s" << std::endl;
+        << time << "s; "
+        << data/time << "MB/s" << std::endl;
 }
 
 template <typename T>
 long timeAction (T action, int iterations)
 {
-    auto const start = std::chrono::steady_clock::now();
+    auto const start = std::chrono::high_resolution_clock::now();
     for (int i=0; i < iterations; ++i)
         if (!run(action))
             throw std::runtime_error("timeAction failed");
-    auto const end = std::chrono::steady_clock::now();
+    auto const end = std::chrono::high_resolution_clock::now();
 
     return std::chrono::duration_cast <std::chrono::milliseconds> (end-start).count();
 }

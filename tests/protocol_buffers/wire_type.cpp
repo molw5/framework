@@ -15,20 +15,34 @@ bool run_stream_test ()
     using framework::serializable::dispatch_read;
     using framework::serializable::dispatch_write;
 
-    type_extractor <T> out, in {0};
+    enum{ bit_count = 8*sizeof(type_extractor <T>) - 1 };
+    enum{ max_value = (~0ull) >> (64 - 8*sizeof(type_extractor <T>) + 1) };
 
-    for (int i=0; i < 200; ++i)
+    uint64_t value = 0;
+    for (int i=0; i < 200; ++i, value = 2*value + i)
     {
-        in = (in * 2) + i;
-        out = 0;
+        auto const x = value % max_value;
+        auto const sign = (value >> bit_count) % 2;
+
+        type_extractor <T> in = sign ? -static_cast <type_extractor <T>> (x) : static_cast <type_extractor <T>> (x);
+        type_extractor <T> out = 0;
 
         std::stringstream ss;
         if (!dispatch_write <T> (in, ss))
+        {
+            std::cout << "write failed - " << in << std::endl;
             return false;
+        }
         if (!dispatch_read <T> (ss, out))
+        {
+            std::cout << "read failed" << std::endl;
             return false;
+        }
         if (in != out)
+        {
+            std::cout << in << " != " << out << std::endl;
             return false;
+        }
     }
 
     return true;
@@ -41,13 +55,19 @@ bool run_raw_test ()
     using framework::serializable::dispatch_read;
     using framework::serializable::dispatch_write;
 
-    type_extractor <T> out, in {0};
+    enum{ bit_count = 8*sizeof(type_extractor <T>) - 1 };
+    enum{ max_value = (~0ull) >> (64 - 8*sizeof(type_extractor <T>) + 1) };
 
-    for (int i=0; i < 200; ++i)
+    uint64_t value = 0;
+    for (int i=0; i < 200; ++i, value = 2*value + i)
     {
         char buffer[10] = {0};
-        in = (in * 2) + i;
-        out = 0;
+
+        auto const x = value % max_value;
+        auto const sign = (value >> bit_count) % 2;
+
+        type_extractor <T> in = sign ? -static_cast <type_extractor <T>> (x) : static_cast <type_extractor <T>> (x);
+        type_extractor <T> out = 0;
 
         {
             char* begin {&buffer[0]};
@@ -171,7 +191,6 @@ SUITE(framework_protocol_buffers_varint_hpp)
         std::vector <int> out;
 
         std::stringstream ss;
-        CHECK(dispatch_write <type> (in, std::ofstream("out.dat")));
         CHECK(dispatch_write <type> (in, ss));
         CHECK(dispatch_read <type> (ss, out));
         CHECK(in == out);

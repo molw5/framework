@@ -86,7 +86,7 @@ namespace framework
                 /**
                 * \brief Wrapper constructor.
                 *
-                * \warn
+                * \warning
                 * The lifetime of stream must exceed this class; behaviour when this condition is not met is undefined.
                 */
                 bit_stream (Stream& s)

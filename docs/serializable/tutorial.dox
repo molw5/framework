@@ -8,7 +8,7 @@ The code provided in \c a_simple_example.cpp demonstrates the simplest
 possible use case for this library - a basic structure is defined, 
 serialized, and deserialized.
 
-\include a_simple_example.cpp
+\include examples/serializable/a_simple_example.cpp
 
 "filename" output:
 
@@ -57,7 +57,7 @@ fundamental type.
 A simple portable example using the \c little_endian and \c big_endian mutators
 to serialize data is provided in \c a_portable_example.cpp:
 
-\include a_portable_example.cpp
+\include examples/serializable/a_portable_example.cpp
 
 "filename" output:
 
@@ -235,7 +235,7 @@ introduce no new library specific information and as such the implementation of
 a custom structure definition, together with an appropriate serialization test, is provided 
 in custom_structures.cpp:
 
-\include custom_structures.cpp
+\include examples/serializable/custom_structures.cpp
 
 \section serializable_custom_implementation Custom implementations
 
@@ -255,7 +255,7 @@ and so on - see value_implementation_wrapper for more details.  Custom implement
 strongly encouraged to use these types to avoid effective duplication of portions of the object's
 specification.
 
-\include custom_implementation.cpp
+\include examples/serializable/custom_implementation.cpp
 
 \todo
 - Introduce the differences between container types, value types, and mutator 
