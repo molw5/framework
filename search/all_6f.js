@@ -1,19 +1,21 @@
 var searchData=
 [
-  ['operator_21_3d',['operator!=',['../structframework_1_1serializable_1_1comparable.html#a60d1f6176dc5cd2a200d19d64723dfd1',1,'framework::serializable::comparable']]],
-  ['operator_3c',['operator&lt;',['../structframework_1_1serializable_1_1comparable.html#ae7295eb8bd98c0f2944a019ee19fecbe',1,'framework::serializable::comparable']]],
-  ['operator_3c_3d',['operator&lt;=',['../structframework_1_1serializable_1_1comparable.html#ab1deb09af38ae290c5f018cfe279fff4',1,'framework::serializable::comparable']]],
-  ['operator_3d_3d',['operator==',['../structframework_1_1serializable_1_1comparable.html#a2bd0d5a5d381d01c1e19fc4a99a898ca',1,'framework::serializable::comparable']]],
-  ['operator_3e',['operator&gt;',['../structframework_1_1serializable_1_1comparable.html#af56345e51cc02ecea1ed3886751f0163',1,'framework::serializable::comparable']]],
-  ['operator_3e_3d',['operator&gt;=',['../structframework_1_1serializable_1_1comparable.html#a375a78907d129b7bbbf68c3942d2633f',1,'framework::serializable::comparable']]],
+  ['object_5fbase',['object_base',['../namespaceframework_1_1serializable.html#a713b06731ae75399cacf92e1e71d9f0e',1,'framework::serializable']]],
+  ['object_5fnames',['object_names',['../namespaceframework_1_1serializable.html#a40e25409b4ac5207bede8f725e417452',1,'framework::serializable']]],
+  ['object_5fspecification',['object_specification',['../namespaceframework_1_1serializable.html#a4524878d84fde38e8dbf549177a7c6a3',1,'framework::serializable']]],
+  ['off_5ftype',['off_type',['../structframework_1_1protocol__buffers_1_1raw__input__frame.html#af41a645baf977aecf5df2bfd9d578b79',1,'framework::protocol_buffers::raw_input_frame::off_type()'],['../structframework_1_1protocol__buffers_1_1raw__output__frame.html#a37db9d60b95ed22cd9f17a6f4323c40e',1,'framework::protocol_buffers::raw_output_frame::off_type()']]],
+  ['operator_21_3d',['operator!=',['../structframework_1_1serializable_1_1comparable.html#a6321ab4d71f7829f07a31e697d849d0f',1,'framework::serializable::comparable']]],
+  ['operator_3c',['operator&lt;',['../structframework_1_1serializable_1_1comparable.html#a0064bc52d273ecb7f869d6bb09100bd1',1,'framework::serializable::comparable']]],
+  ['operator_3c_3d',['operator&lt;=',['../structframework_1_1serializable_1_1comparable.html#abb505619d39bceb0c0b40dab2bb0b1de',1,'framework::serializable::comparable']]],
+  ['operator_3d_3d',['operator==',['../structframework_1_1serializable_1_1comparable.html#a2324658d30d314657316326cc4f51fc9',1,'framework::serializable::comparable']]],
+  ['operator_3e',['operator&gt;',['../structframework_1_1serializable_1_1comparable.html#ad21cc5e6fcc71c22a398c39692cfb5be',1,'framework::serializable::comparable']]],
+  ['operator_3e_3d',['operator&gt;=',['../structframework_1_1serializable_1_1comparable.html#a3550ed9104487940447ba9d0e0184942',1,'framework::serializable::comparable']]],
+  ['optional',['optional',['../structframework_1_1protocol__buffers_1_1optional.html',1,'framework::protocol_buffers']]],
+  ['optional_2ehpp',['optional.hpp',['../optional_8hpp.html',1,'']]],
   ['optional_5ffield',['optional_field',['../structframework_1_1serializable_1_1optional__field.html',1,'framework::serializable']]],
   ['optional_5ffield_2ehpp',['optional_field.hpp',['../optional__field_8hpp.html',1,'']]],
-  ['optional_5ffield_5finput_5fwrapper',['optional_field_input_wrapper',['../classframework_1_1serializable_1_1optional__field__input__wrapper.html',1,'framework::serializable']]],
-  ['optional_5ffield_5finput_5fwrapper',['optional_field_input_wrapper',['../classframework_1_1serializable_1_1optional__field__input__wrapper.html#a0ab10e60bf4c289e8b2c398c4c67007d',1,'framework::serializable::optional_field_input_wrapper']]],
-  ['optional_5ffield_5foutput_5fwrapper',['optional_field_output_wrapper',['../classframework_1_1serializable_1_1optional__field__output__wrapper.html#ac2db3c9e880718474c4024921c1373af',1,'framework::serializable::optional_field_output_wrapper']]],
-  ['optional_5ffield_5foutput_5fwrapper',['optional_field_output_wrapper',['../classframework_1_1serializable_1_1optional__field__output__wrapper.html',1,'framework::serializable']]],
   ['optional_5fvalue',['optional_value',['../structframework_1_1serializable_1_1optional__value.html',1,'framework::serializable']]],
   ['optional_5fvalue_2ehpp',['optional_value.hpp',['../optional__value_8hpp.html',1,'']]],
-  ['optional_5fvalue_5fimplementation',['optional_value_implementation',['../structframework_1_1serializable_1_1optional__value__implementation.html#a2411848f19bc12a9646b548ad94e5863',1,'framework::serializable::optional_value_implementation::optional_value_implementation()'],['../structframework_1_1serializable_1_1optional__value__implementation.html#a11acc6429f063fb51dd9ef11f99ab5ca',1,'framework::serializable::optional_value_implementation::optional_value_implementation(value_type value)'],['../structframework_1_1serializable_1_1optional__value__implementation.html#aabfcc3a0264a44ce3b7849f87ba944b4',1,'framework::serializable::optional_value_implementation::optional_value_implementation(std::tuple&lt;&gt;)'],['../structframework_1_1serializable_1_1optional__value__implementation.html#ab94c2bfe6d02b660779347a3bfe5c654',1,'framework::serializable::optional_value_implementation::optional_value_implementation(std::tuple&lt; Args &amp;&amp;...&gt; &amp;&amp;args)']]],
-  ['optional_5fvalue_5fimplementation',['optional_value_implementation',['../structframework_1_1serializable_1_1optional__value__implementation.html',1,'framework::serializable']]]
+  ['output_5fflags_5fframe',['output_flags_frame',['../classframework_1_1serializable_1_1output__flags__frame.html',1,'framework::serializable']]],
+  ['size_5ft',['size_t',['../classframework_1_1protocol__buffers_1_1size__frame.html#aac97f715f8405641935d993cf73e607e',1,'framework::protocol_buffers::size_frame']]]
 ];

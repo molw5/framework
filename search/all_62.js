@@ -1,6 +1,20 @@
 var searchData=
 [
-  ['base_5ftypes_2ehpp',['base_types.hpp',['../base__types_8hpp.html',1,'']]],
+  ['base_5ftypes_2ehpp',['base_types.hpp',['../protocol__buffers_2base__types_8hpp.html',1,'']]],
+  ['base_5ftypes_2ehpp',['base_types.hpp',['../serializable_2base__types_8hpp.html',1,'']]],
   ['big_5fendian',['big_endian',['../structframework_1_1serializable_1_1big__endian.html',1,'framework::serializable']]],
-  ['big_5fendian_2ehpp',['big_endian.hpp',['../big__endian_8hpp.html',1,'']]]
+  ['bit_5ffield',['bit_field',['../structframework_1_1serializable_1_1bit__field.html',1,'framework::serializable']]],
+  ['bit_5ffield_2ehpp',['bit_field.hpp',['../bit__field_8hpp.html',1,'']]],
+  ['bit_5fstream',['bit_stream',['../classframework_1_1serializable_1_1bit__stream.html#a8039d1d64fe365ef61092e8db3ef75c0',1,'framework::serializable::bit_stream']]],
+  ['bit_5fstream',['bit_stream',['../classframework_1_1serializable_1_1bit__stream.html',1,'framework::serializable']]],
+  ['bit_5fstream_2ehpp',['bit_stream.hpp',['../bit__stream_8hpp.html',1,'']]],
+  ['bit_5fvalue',['bit_value',['../structframework_1_1serializable_1_1bit__value.html',1,'framework::serializable']]],
+  ['bit_5fvalue_2ehpp',['bit_value.hpp',['../bit__value_8hpp.html',1,'']]],
+  ['bool_5f',['bool_',['../namespaceframework_1_1protocol__buffers.html#acdb16550c21cef0123ee9cb9b5bb2250',1,'framework::protocol_buffers']]],
+  ['bswap16',['bswap16',['../namespaceframework.html#a9187399d61610b50b3dd8cd87b866aa7',1,'framework']]],
+  ['bswap32',['bswap32',['../namespaceframework.html#a4b629f55c07d433f71b35dcf74bea2fa',1,'framework']]],
+  ['bswap64',['bswap64',['../namespaceframework.html#aa98ec8b98d1abf3558da42939a0f8d2d',1,'framework']]],
+  ['byte_5forder',['byte_order',['../namespaceframework.html#a684c4da52f6db239f390e3d4f00ee474',1,'framework']]],
+  ['byte_5fswap_2ehpp',['byte_swap.hpp',['../byte__swap_8hpp.html',1,'']]],
+  ['bytes',['bytes',['../namespaceframework_1_1protocol__buffers.html#a647af537e2201ba70b7b9441c55cb872',1,'framework::protocol_buffers']]]
 ];
